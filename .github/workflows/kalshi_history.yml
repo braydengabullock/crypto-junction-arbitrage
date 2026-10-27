@@ -1,0 +1,25 @@
+name: Kalshi quote history (research only)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7,37 * * * *"
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Capture exchange quotes and timestamps
+        run: python capture_kalshi.py --limit 100
+      - name: Retain timestamped snapshots for replay
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalshi-research-${{ github.run_id }}
+          path: snapshots/*.json
+          retention-days: 14
+          if-no-files-found: error
