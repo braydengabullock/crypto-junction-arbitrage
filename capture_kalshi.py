@@ -7,10 +7,10 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
-from kalshi_public import fetch_markets, snapshot
+from kalshi_public import fetch_market_pages, snapshot
 
-def capture(*, limit=100, event_ticker=None, output_dir="snapshots"):
-    markets=fetch_markets(limit=limit,event_ticker=event_ticker)
+def capture(*, limit=100, max_pages=5, event_ticker=None, output_dir="snapshots"):
+    markets, paging=fetch_market_pages(page_size=limit,max_pages=max_pages,event_ticker=event_ticker)
     observed=datetime.now(timezone.utc)
     payload=snapshot(markets,now=observed)
     payload["data_quality"]={
@@ -18,7 +18,8 @@ def capture(*, limit=100, event_ticker=None, output_dir="snapshots"):
         "depth_verified":False,
         "wealthsimple_executability_verified":False,
         "forecast_ex_match_verified":False,
-        "coverage":"only first requested API page; not all open Kalshi markets",
+        "coverage":"all pages" if paging["complete"] else "partial: configured page cap reached",
+        "pagination":paging,
         "requested_limit":limit,
         "market_count":len(markets),
     }
@@ -34,10 +35,11 @@ def capture(*, limit=100, event_ticker=None, output_dir="snapshots"):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--limit",type=int,default=100)
+    p.add_argument("--max-pages",type=int,default=5)
     p.add_argument("--event-ticker")
     p.add_argument("--output-dir",default="snapshots")
     a=p.parse_args()
-    capture(limit=a.limit,event_ticker=a.event_ticker,output_dir=a.output_dir)
+    capture(limit=a.limit,max_pages=a.max_pages,event_ticker=a.event_ticker,output_dir=a.output_dir)
 
 if __name__=="__main__":
     main()
