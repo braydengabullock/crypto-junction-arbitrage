@@ -45,3 +45,11 @@ Kalshi order-book depth, pagination, ForecastEx real-time quotes, market-rule ma
 ## Cross-venue matching review (V0.5)
 
 `python matching_review.py --kalshi kalshi_snapshot.json --forecast forecast_snapshot.json` compares event titles **only** and creates a non-actionable manual review list. It never verifies outcome equivalence or provides trade signals. The ForecastEx snapshot must be supplied from an authorized source in the same JSON object format with `markets` records containing `contract_id` and `title`. No ForecastEx live connector or verified broker link is available yet. IBKR's authenticated event-contract discovery and price feed are the intended next integration after account access is confirmed.
+
+## V0.6 — strict paper-only paired evaluation
+
+`research_pair.py` provides `assess_pair(pair)` and `format_research_alert(pair, result)`. For a **manually verified** two-venue YES/NO pair it checks separate underlying venues, verified matching resolution criteria, USD denomination, permissions, two fresh timestamps, expected payout on both venues within two hours, prices, fees, depth and $100 combined cost. The two sides receive the same integer contract count. Missing or unverified data is blocked, not guessed. The formula is illustrative and assumes a $1 combined payout, both legs completely filled and fees fully known.
+
+The formatter returns text only for research-review status, prominently labeled **NOT A TRADE SIGNAL**. It never calls Telegram and never places orders. Contract matching from titles alone is still unverified, and no validated live ForecastEx broker feed or Wealthsimple contract mapping exists. Current 25% portfolio cap and 30% per-venue reserves are policy requirements but are NOT YET enforced by this pair evaluator; do not treat the program as live-ready.
+
+Run `python -m unittest discover -s tests -v` to check safeguards. API tokens and trading credentials must never be committed to GitHub.
