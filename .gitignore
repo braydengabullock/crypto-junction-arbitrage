@@ -9,3 +9,7 @@ kalshi_snapshot.json
 
 # Private offline inputs (do not commit)
 local_*.json
+
+# API snapshot archives stay in Actions artifacts, not git
+snapshots/
+local_paper_trades.sqlite3
