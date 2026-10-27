@@ -74,3 +74,13 @@ python paper_review.py --candidate local_candidate.json --balances local_balance
 Don't commit personal account information, API credentials, balances, or investment records to GitHub. Local JSON input files are ignored by `.gitignore` once named `local_*.json`.
 
 Important limitation: the proof fields `settlement_verified` and `eligibility_verified` remain user-supplied booleans. They are **not** independently validated against exchange or broker rules. Any positive result is a *paper review only*, not a trade recommendation. Broker-level fillability, platform eligibility and Wealthsimple deep links remain unresolved.
+
+## V0.9 — Actual timestamped Kalshi observations
+
+A separate read-only GitHub Actions workflow, **Kalshi quote history (research only)**, has been added under `.github/workflows/kalshi_history.yml`. It is scheduled at minute 07 and 37 every hour (GitHub schedules can be delayed or skipped). You may trigger it manually using **Actions → Kalshi quote history (research only) → Run workflow**.
+
+Each successful run downloads up to the first 100 currently open Kalshi markets from the public API, records a UTC timestamp, and uploads a JSON snapshot as a private GitHub Actions artifact. Artifacts expire after 14 days. The repository does not contain the recorded prices, and the workflow does not place orders, transmit Telegram messages, or make profitability claims.
+
+Caveats: the first 100 markets are only a partial market sample, snapshots are intermittent and the feed lacks verified $100 execution depth. This is *real public Kalshi quote collection*, not a cross-platform backtest. We need contemporaneous, authorized ForecastEx ask prices, equivalent settlement conditions, brokerage fees, available depth, and eventual actual payouts to evaluate any historical matched trade. The offline paper journal is still assumption-based until such recordings are available.
+
+To inspect a snapshot: GitHub → Actions → Kalshi quote history → successful run → **Artifacts** → download `kalshi-research-...`. Do not treat the market list as a tradable alert.
