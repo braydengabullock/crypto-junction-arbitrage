@@ -3,7 +3,7 @@
 Never infers legal eligibility, resolution equivalence or synchronized broker
 quotes from similar names. No network calls.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal, ROUND_DOWN, InvalidOperation
 from urllib.parse import urlparse
 
@@ -61,8 +61,7 @@ def assess_pair(pair, *, now=None, budget="100", threshold="2", horizon_minutes=
                 problems.append("Missing synchronized fresh executable quotes")
                 break
         for stamp in times[2:]:
-            if not (now < stamp <= now.replace(year=now.year) +
-                    __import__("datetime").timedelta(minutes=horizon_minutes)):
+            if not (now < stamp <= now + timedelta(minutes=horizon_minutes)):
                 problems.append("Payout outside 2-hour target")
                 break
         cost_each = a+b+fa+fb
