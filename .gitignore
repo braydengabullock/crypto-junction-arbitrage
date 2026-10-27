@@ -5,3 +5,4 @@ __pycache__/
 .env.*
 research.sqlite3
 *.log
+kalshi_snapshot.json
