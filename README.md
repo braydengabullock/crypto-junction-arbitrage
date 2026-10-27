@@ -61,3 +61,16 @@ The legacy CSV runner no longer transmits Telegram messages even when handed sam
 `capital_limits.capital_check()` accepts user-supplied USD available balances for the two venues, current portfolio value and outstanding committed capital. It rejects any modeled allocation breaching a 30% per-venue available-balance reserve or 25% concurrent exposure cap. These balances are not fetched from brokerage APIs and the policy checker is **not yet connected to live alerts**.
 
 No live ForecastEx data, verified identical contracts, independent resolution rule comparisons, wealthsimple deep links, account balance integrations, or safe real-time opportunity alerts are available. Those remain blockers.
+
+## V0.8 — Offline end-to-end safety review
+
+`paper_review.py` connects the separate paired-contract evaluator with the per-venue balance checks. It requires **two manually supplied JSON files** (candidate contract data and balances). It outputs one of `BLOCKED` or `PAPER_REVIEW`. It **never transmits** a Telegram alert, places an order, or asserts that hypothetical input is real.
+
+```bash
+python -m unittest discover -s tests -v
+python paper_review.py --candidate local_candidate.json --balances local_balances.json
+```
+
+Don't commit personal account information, API credentials, balances, or investment records to GitHub. Local JSON input files are ignored by `.gitignore` once named `local_*.json`.
+
+Important limitation: the proof fields `settlement_verified` and `eligibility_verified` remain user-supplied booleans. They are **not** independently validated against exchange or broker rules. Any positive result is a *paper review only*, not a trade recommendation. Broker-level fillability, platform eligibility and Wealthsimple deep links remain unresolved.
