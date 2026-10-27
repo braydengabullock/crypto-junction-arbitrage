@@ -6,3 +6,6 @@ __pycache__/
 research.sqlite3
 *.log
 kalshi_snapshot.json
+
+# Private offline inputs (do not commit)
+local_*.json
