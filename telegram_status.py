@@ -15,7 +15,7 @@ def status_message(snapshot_path):
             f"Open markets sampled: {quality.get('market_count',len(data.get('markets',[])))}\n"
             ("Data: Kalshi public quotes only; " +
              ("complete paginated retrieval." if quality.get("pagination", {}).get("complete")
-              else "partial sampled retrieval.") + "\\n")
+              else "partial sampled retrieval.") + "\n")
 
             "ForecastEx feed: NOT CONNECTED.\n"
             "Verified opportunities: NONE. No orders placed.")
