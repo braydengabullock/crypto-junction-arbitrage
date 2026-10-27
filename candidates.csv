@@ -1,0 +1,2 @@
+event,a_venue,a_contract,a_side,a_ask,a_depth,b_venue,b_contract,b_side,b_ask,b_depth,observed_at,event_end_at,expected_payout_at,match_verified,a_fee_per_contract,b_fee_per_contract,a_market_url,b_market_url
+Demo (stale and unverified),Kalshi,DEMO_A,YES,0.42,100,ForecastEx,DEMO_B,NO,0.53,100,2025-01-01T00:00:00Z,2027-01-01T00:00:00Z,2027-01-01T01:00:00Z,false,0.02,0.01,https://kalshi.com,https://www.forecastex.com
