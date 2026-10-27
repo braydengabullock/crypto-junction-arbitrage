@@ -35,3 +35,9 @@ The included CSV sample is stale and unmatched and must print `REJECT`.
 6. Never place real orders based solely on research messages; the two legs may fail to fill together.
 
 Next: API connectors (read-only), explicit rule-match allowlist, synchronized depth, broker mapping, balance ledger and manual alert links.
+
+## Kalshi public market discovery (V0.3)
+
+Use `python kalshi_public.py --limit 30` for a **one-time** read of open markets. The script saves `kalshi_snapshot.json` locally and displays the number of markets fetched. `--event-ticker <TICKER>` narrows to a specific event. This is **not continuous monitoring**. The connector requires internet access in the environment where it runs. It does not require login or an API key, and it neither estimates cross-exchange profit nor sends Telegram messages. Results are a Kalshi exchange snapshot, not a verified Wealthsimple executable quote.
+
+Kalshi order-book depth, pagination, ForecastEx real-time quotes, market-rule matching, settlement delay and manual broker deep links remain outstanding.
