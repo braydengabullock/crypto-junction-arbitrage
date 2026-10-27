@@ -84,3 +84,17 @@ Each successful run downloads up to the first 100 currently open Kalshi markets 
 Caveats: the first 100 markets are only a partial market sample, snapshots are intermittent and the feed lacks verified $100 execution depth. This is *real public Kalshi quote collection*, not a cross-platform backtest. We need contemporaneous, authorized ForecastEx ask prices, equivalent settlement conditions, brokerage fees, available depth, and eventual actual payouts to evaluate any historical matched trade. The offline paper journal is still assumption-based until such recordings are available.
 
 To inspect a snapshot: GitHub → Actions → Kalshi quote history → successful run → **Artifacts** → download `kalshi-research-...`. Do not treat the market list as a tradable alert.
+
+## V1.0 — Optional Telegram capture-status notification
+
+The quote-history workflow still captures Kalshi public data every 30 minutes on its best-effort GitHub schedule, and uploads snapshots retained for 14 days. For now, Telegram sends **only when you manually click Run workflow**, to avoid dozens of messages a day.
+
+To activate:
+1. Create a separate Telegram bot in BotFather, if desired, or reuse your own bot. Start a private chat with that bot and send `/start`.
+2. Obtain your own Telegram chat ID from the Telegram Bot API `getUpdates` endpoint, or a trusted chat-ID utility. Never paste the token or chat ID into GitHub source code or the conversation.
+3. Go to GitHub repository **Settings → Secrets and variables → Actions → New repository secret**. Add two secrets: `CJ_ARB_TELEGRAM_BOT_TOKEN` and `CJ_ARB_TELEGRAM_CHAT_ID`.
+4. Go to **Actions → Kalshi quote history (research only) → Run workflow**. After successful collection, the manually triggered run attempts one message labeled **research status**.
+
+If either secret is missing, the workflow still succeeds and no Telegram message is sent. The script reports that Telegram is disabled in its log.
+
+Do not enable trade opportunity alerts until the second authenticated feed, independently verified rules, account permissions, broker-level prices, and matched-depth checks are available.
