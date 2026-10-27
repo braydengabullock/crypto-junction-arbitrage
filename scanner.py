@@ -2,10 +2,8 @@
 from datetime import datetime, timezone
 import csv
 import json
-import os
 from pathlib import Path
 import sqlite3
-import urllib.request
 
 ROOT = Path(__file__).resolve().parent
 
@@ -96,7 +94,7 @@ def telegram_text(result):
         "DO NOT TRADE FROM THIS ALERT. Reverify asks, depth, fees, FX, terms, access and fill risk."
     )
 
-def run(csv_path=None, telegram=False):
+def run(csv_path=None):
     cfg = json.loads((ROOT / "config.json").read_text())
     path = Path(csv_path) if csv_path else ROOT / "candidates.csv"
     db_path = ROOT / "research.sqlite3"
@@ -109,22 +107,10 @@ def run(csv_path=None, telegram=False):
                 db.execute("INSERT INTO scans VALUES (?, ?, ?, ?)",
                     (datetime.now(timezone.utc).isoformat(), row.get("event", ""),
                      result["status"], json.dumps(result)))
-                alert = telegram_text(result)
-                if telegram and alert:
-                    token = os.getenv("CJ_TELEGRAM_BOT_TOKEN")
-                    chat = os.getenv("CJ_TELEGRAM_CHAT_ID")
-                    if token and chat:
-                        data = json.dumps({"chat_id": chat, "text": alert}).encode()
-                        req = urllib.request.Request(
-                            f"https://api.telegram.org/bot{token}/sendMessage",
-                            data=data, headers={"Content-Type": "application/json"})
-                        with urllib.request.urlopen(req, timeout=15):
-                            pass
 
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--file")
-    p.add_argument("--telegram", action="store_true", help="Research labels only")
     opts = p.parse_args()
-    run(opts.file, opts.telegram)
+    run(opts.file)
