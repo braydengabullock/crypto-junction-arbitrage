@@ -53,3 +53,11 @@ Kalshi order-book depth, pagination, ForecastEx real-time quotes, market-rule ma
 The formatter returns text only for research-review status, prominently labeled **NOT A TRADE SIGNAL**. It never calls Telegram and never places orders. Contract matching from titles alone is still unverified, and no validated live ForecastEx broker feed or Wealthsimple contract mapping exists. Current 25% portfolio cap and 30% per-venue reserves are policy requirements but are NOT YET enforced by this pair evaluator; do not treat the program as live-ready.
 
 Run `python -m unittest discover -s tests -v` to check safeguards. API tokens and trading credentials must never be committed to GitHub.
+
+## V0.7 — balance policy and Telegram safety
+
+The legacy CSV runner no longer transmits Telegram messages even when handed sample data. `telegram_text()` and `format_research_alert()` produce local strings only; nothing sends them to Telegram. Research results are **not live trade recommendations**.
+
+`capital_limits.capital_check()` accepts user-supplied USD available balances for the two venues, current portfolio value and outstanding committed capital. It rejects any modeled allocation breaching a 30% per-venue available-balance reserve or 25% concurrent exposure cap. These balances are not fetched from brokerage APIs and the policy checker is **not yet connected to live alerts**.
+
+No live ForecastEx data, verified identical contracts, independent resolution rule comparisons, wealthsimple deep links, account balance integrations, or safe real-time opportunity alerts are available. Those remain blockers.
