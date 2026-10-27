@@ -29,6 +29,35 @@ def fetch_markets(limit=30, event_ticker=None, opener=urlopen):
         raise ValueError("Unrecognized Kalshi response")
     return obj["markets"]
 
+
+def fetch_market_pages(*, page_size=100, max_pages=5, event_ticker=None, opener=urlopen):
+    """Bounded, read-only cursor pagination. Reports whether coverage is complete."""
+    if not 1 <= page_size <= 100 or not 1 <= max_pages <= 20:
+        raise ValueError("Invalid page size or page cap")
+    rows, seen_cursors, cursor = [], set(), None
+    for _ in range(max_pages):
+        params = {"limit": page_size, "status": "open"}
+        if event_ticker:
+            params["event_ticker"] = event_ticker
+        if cursor:
+            params["cursor"] = cursor
+        req = Request(BASE_URL + "/markets?" + urlencode(params),
+                      headers={"User-Agent": "CJ-Arbitrage-Research/0.4",
+                               "Accept": "application/json"})
+        with opener(req, timeout=20) as response:
+            obj = json.load(response)
+        if not isinstance(obj, dict) or not isinstance(obj.get("markets"), list):
+            raise ValueError("Unrecognized Kalshi paginated response")
+        rows.extend(obj["markets"])
+        next_cursor = obj.get("cursor")
+        if not next_cursor:
+            return rows, {"complete": True, "pages_fetched": len(seen_cursors)+1}
+        if not isinstance(next_cursor, str) or next_cursor in seen_cursors:
+            raise ValueError("Invalid or repeated Kalshi pagination cursor")
+        seen_cursors.add(next_cursor)
+        cursor = next_cursor
+    return rows, {"complete": False, "pages_fetched": max_pages}
+
 def snapshot(markets, now=None):
     timestamp = (now or datetime.now(timezone.utc)).isoformat()
     return {
