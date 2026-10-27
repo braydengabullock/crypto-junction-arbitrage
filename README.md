@@ -41,3 +41,7 @@ Next: API connectors (read-only), explicit rule-match allowlist, synchronized de
 Use `python kalshi_public.py --limit 30` for a **one-time** read of open markets. The script saves `kalshi_snapshot.json` locally and displays the number of markets fetched. `--event-ticker <TICKER>` narrows to a specific event. This is **not continuous monitoring**. The connector requires internet access in the environment where it runs. It does not require login or an API key, and it neither estimates cross-exchange profit nor sends Telegram messages. Results are a Kalshi exchange snapshot, not a verified Wealthsimple executable quote.
 
 Kalshi order-book depth, pagination, ForecastEx real-time quotes, market-rule matching, settlement delay and manual broker deep links remain outstanding.
+
+## Cross-venue matching review (V0.5)
+
+`python matching_review.py --kalshi kalshi_snapshot.json --forecast forecast_snapshot.json` compares event titles **only** and creates a non-actionable manual review list. It never verifies outcome equivalence or provides trade signals. The ForecastEx snapshot must be supplied from an authorized source in the same JSON object format with `markets` records containing `contract_id` and `title`. No ForecastEx live connector or verified broker link is available yet. IBKR's authenticated event-contract discovery and price feed are the intended next integration after account access is confirmed.
