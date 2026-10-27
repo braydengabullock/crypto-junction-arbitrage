@@ -23,3 +23,9 @@ jobs:
           path: snapshots/*.json
           retention-days: 14
           if-no-files-found: error
+      - name: Optional Telegram status on manual runs only
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CJ_ARB_TELEGRAM_BOT_TOKEN: ${{ secrets.CJ_ARB_TELEGRAM_BOT_TOKEN }}
+          CJ_ARB_TELEGRAM_CHAT_ID: ${{ secrets.CJ_ARB_TELEGRAM_CHAT_ID }}
+        run: python telegram_status.py --snapshot "$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
