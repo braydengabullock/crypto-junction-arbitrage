@@ -10,6 +10,17 @@ from decimal import Decimal
 from orderbook_research import kalshi_buy_levels,polymarket_buy_levels,depth_cost
 from fee_estimates import kalshi_general_taker_fee,polymarket_sports_taker_fee,positive
 
+def roi_tier(profit, cost):
+    """Research classification only: any strictly positive net is eligible for review."""
+    if cost <= 0 or profit <= 0:
+        return "NONPOSITIVE_REJECT"
+    pct=profit/cost*100
+    if pct >= Decimal("2"):
+        return "EXCEPTIONAL_2_PLUS"
+    if pct >= Decimal("0.5"):
+        return "HIGHER_PRIORITY_0_5_PLUS"
+    return "SMALL_POSITIVE"
+
 def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="100",opposing_tokens=None):
     result={"research_only":True,"trade_allowed":False,"fee_inputs_verified":False,
             "market_rules_verified":False,"net_profit_verified":False,
@@ -59,10 +70,14 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+kfee+pfee+fixed
                         if total>cap: break
                         profit=Decimal(n)-total
+                        allocation={"kalshi_displayed_usd":str(kc["displayed_cost_usd"]),
+                                    "polymarket_displayed_usd":str(pc["displayed_cost_usd"]),
+                                    "modeled_fees_and_extra_usd":str(kfee+pfee+fixed)}
                         if n==10:
                             quote_quality["sufficient_depth_for_ten"]=True
                             fixed_ten={"contracts_each":10,"total_cost_usd":str(total),
                                        "hypothetical_net_usd":str(profit),
+                                       "net_roi_tier":roi_tier(profit,total),
                                        "displayed_kalshi_cost_usd":str(kc["displayed_cost_usd"]),
                                        "displayed_polymarket_cost_usd":str(pc["displayed_cost_usd"]),
                                        "raw_displayed_spread_usd":str(Decimal(n)-Decimal(kc["displayed_cost_usd"])-Decimal(pc["displayed_cost_usd"])),
@@ -73,12 +88,14 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
                             closest={"contracts_each":n,"total_cost_usd":str(total),
                                      "hypothetical_net_usd":str(profit),
+                                     "net_roi_tier":roi_tier(profit,total),"venue_allocation":allocation,
                                      "minimum_total_cost_reduction_to_positive_usd":str((-profit if profit<0 else Decimal("0"))+Decimal("0.01")) if profit<=0 else "0",
                                      "minimum_reduction_per_contract_pair_usd":str((((-profit if profit<0 else Decimal("0"))+Decimal("0.01"))/n).quantize(Decimal("0.00001"))) if profit<=0 else "0",
                                      "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
                         if profit>0 and (best is None or profit>Decimal(best["hypothetical_net_usd"])):
                             best={"contracts_each":n,"total_cost_usd":str(total),
                                   "hypothetical_net_usd":str(profit),
+                                  "net_roi_tier":roi_tier(profit,total),"venue_allocation":allocation,
                                   "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
                     if closest:
                         result["near_misses"].append({"kalshi_ticker":row.get("kalshi_ticker"),
