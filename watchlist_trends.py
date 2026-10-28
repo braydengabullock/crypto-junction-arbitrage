@@ -39,7 +39,7 @@ def compare(previous,current):
                     break
         close_now=new_fixed is not None and Decimal("-0.25")<=new_fixed<0
         streak=(min(previous_streak,10000)+1) if close_now else 0
-        changes.append({"near_break_even_streak":streak,"monitoring_priority":priority,
+        changes.append({"near_break_even_streak":streak,"quote_quality_passed":quality_ok,"monitoring_priority":priority,
             "distance_to_break_even_fixed_ten_usd":str(-new_fixed) if new_fixed is not None and new_fixed<0 else "0" if new_fixed is not None else None,"kalshi_ticker":key[0],"kalshi_side":key[1],
             "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
             "current_net_usd":str(new_profit),
