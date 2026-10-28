@@ -51,13 +51,13 @@ def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
             if len(records) < limit:
                 complete = True
                 break
-        if pages:
-            all_complete = all_complete and complete
+        all_complete = all_complete and complete if pages else False
         details.append({"order":order,"ascending":ascending,
                         "pages_fetched":visited,"complete":complete})
     return markets, {"complete":all_complete,
                      "pages_fetched":sum(x["pages_fetched"] for x in details),
                      "sorts":details,"deduplicated":True,
+                     "strategies_sampled":sum(bool(x["pages_fetched"]) for x in details),
                      "coverage":"mixed active-volume and earliest-end-date samples"}
 
 def snapshot(markets, pagination, *, now=None):
