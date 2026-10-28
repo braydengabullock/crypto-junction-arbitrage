@@ -1,0 +1,90 @@
+"""Research-only Kalshi ↔ Polymarket title comparison.
+
+Potentially similar titles are NEVER proof of equivalent resolution.
+No execution, Telegram, modeled arbitrage profit or automatic trading.
+"""
+import argparse
+import json
+import re
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+
+STOP = {"will","the","a","an","at","on","of","in","to","by","before","after",
+        "for","be","is","and","or","yes","no","does","that","this","market",
+        "price","above","below"}
+TOKEN = re.compile(r"[a-z0-9]+")
+def tokenize(text):
+    return set(TOKEN.findall(str(text).lower())) - STOP
+
+def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
+    if not 0 <= threshold <= 1 or max_results < 1:
+        raise ValueError("Invalid matching threshold or result cap")
+    index=defaultdict(list)
+    p_markets=polymarket["markets"]
+    for ix, market in enumerate(p_markets):
+        for word in tokenize(market.get("question") or ""):
+            index[word].append(ix)
+    results=[]
+    for market in kalshi["markets"]:
+        title=market.get("title") or ""
+        words=tokenize(title)
+        if not words:
+            continue
+        ids=set()
+        for word in words:
+            ids.update(index[word])
+        for ix in ids:
+            other=p_markets[ix]
+            other_words=tokenize(other.get("question") or "")
+            union=words | other_words
+            score=len(words & other_words)/len(union) if union else 0
+            if score >= threshold:
+                results.append({
+                    "kalshi_ticker":market.get("ticker"),
+                    "polymarket_id":other.get("id"),
+                    "polymarket_slug":other.get("slug"),
+                    "kalshi_title":title,
+                    "polymarket_question":other.get("question"),
+                    "title_similarity":round(score,3),
+                    "market_rules_verified":False,
+                    "price_comparison_verified":False,
+                    "tradable":False,
+                    "status":"MANUAL_REVIEW_ONLY"
+                })
+    results.sort(key=lambda item:item["title_similarity"],reverse=True)
+    return results[:max_results],len(results)
+
+def read_snapshot(path, expected):
+    obj=json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(obj,dict) or obj.get("source")!=expected or obj.get("research_only") is not True or not isinstance(obj.get("markets"),list):
+        raise ValueError("Invalid or non-research snapshot: "+expected)
+    return obj
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--kalshi",required=True)
+    parser.add_argument("--polymarket",required=True)
+    parser.add_argument("--output",default="research_matches.json")
+    parser.add_argument("--threshold",type=float,default=0.55)
+    args=parser.parse_args()
+    k=read_snapshot(args.kalshi,"kalshi_public")
+    p=read_snapshot(args.polymarket,"polymarket_gamma_public")
+    matches,count=compare(k,p,threshold=args.threshold)
+    result={
+        "source":"kalshi_polymarket_title_research",
+        "created_at":datetime.now(timezone.utc).isoformat(),
+        "research_only":True,
+        "verified_matches":0,
+        "potential_title_matches_found":count,
+        "candidates_returned":len(matches),
+        "snapshot_times":{"kalshi":k.get("observed_at"),"polymarket":p.get("observed_at")},
+        "coverage_note":"Both source feeds are paginated samples; timing may differ.",
+        "warning":"Title overlap DOES NOT imply equivalent rules, payout, executable prices, legal eligibility, or arbitrage. Do not trade.",
+        "candidates":matches,
+    }
+    Path(args.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
+    print(json.dumps({"research_only":True,"candidates":len(matches),"verified_matches":0,"output":args.output}))
+
+if __name__=="__main__":
+    main()
