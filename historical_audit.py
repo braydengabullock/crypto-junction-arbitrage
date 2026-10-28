@@ -51,11 +51,13 @@ def evaluate(row, *, budget="100", roi_floor="2"):
             reasons.append("Non-synchronized quotes")
         if settled < max(ta,tb):
             reasons.append("Settlement before observed quotes")
+        if (settled - max(ta,tb)).total_seconds() > 2 * 3600:
+            reasons.append("Settlement outside 2-hour target; cash availability remains unverified")
         a,b=dec(row["ask_a"]),dec(row["ask_b"])
         fa,fb=dec(row["fee_a_per_contract"]),dec(row["fee_b_per_contract"])
         depth_a,depth_b=dec(row["depth_a"]),dec(row["depth_b"])
         payout=dec(row["actual_payout_per_pair"])
-        if a>1 or b>1 or depth_a!=depth_a.to_integral_value() or depth_b!=depth_b.to_integral_value():
+        if a>1 or b>1 or payout>1 or depth_a!=depth_a.to_integral_value() or depth_b!=depth_b.to_integral_value():
             reasons.append("Invalid contract ask or depth")
         per_pair=a+b+fa+fb
         qty=min(int(depth_a),int(depth_b),
@@ -79,6 +81,7 @@ def evaluate(row, *, budget="100", roi_floor="2"):
             "modeled_profit_usd":str(gain.quantize(MONEY)),
             "modeled_net_roi_pct":str(roi.quantize(Decimal("0.001"))),
             "entry_projected_roi_pct":str(projected_roi.quantize(Decimal("0.001"))),
+            "cash_reuse_verified":False,
             "caveat":"Evidence flags and payouts supplied externally; no authenticated historical fills verified."}
 
 def audit(rows):
