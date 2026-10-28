@@ -1,11 +1,11 @@
 # Crypto Junction — Prediction Arbitrage Scanner
 
-Research-only project. **No live exchange execution and no verified real-time cross-venue feed yet.** Separate from the Kraken scanner.
+Research-only project. **No live exchange execution. Public cross-venue snapshots are sampled sequentially, not an executable synchronized feed.** Separate from the Kraken scanner.
 
 ## V0.2 scope
 
 - Two venues, matching YES/NO contract research.
-- $100 USD maximum *combined* spend per opportunity; 2% minimum modeled net ROI.
+- $100 USD maximum *combined* spend per opportunity; positive modeled net profit after buffers; 0.5%+ is higher research priority, not a hard minimum.
 - Target estimated payout within two hours, not merely event end.
 - Reject stale or missing quotes, unverified settlement equivalence and insufficient depth.
 - Optional Telegram messages are labeled **research candidate — not a trade signal**.
@@ -129,3 +129,9 @@ Run `python -m unittest discover -s tests -v` to test all modules. GitHub workfl
 ## V1.5 — Traceable candidate review evidence
 
 The scheduled `market_comparison.py` workflow now includes original Kalshi rule excerpts, Polymarket descriptions/resolution-source metadata, available market dates and Polymarket CLOB token identifiers in each title-match candidate. It also provides a concrete human-review checklist. Official rules links are left `null` until verified; they are **never constructed from guesses**. This is a review queue, not independent validation or a trade alert. Venue eligibility and true orderbook fillability remain unresolved. Tests cover preservation of evidence and continued no-trade flags.
+
+## Current read-only research status (October 2026)
+
+The scheduled Kalshi–Polymarket sports comparison now collects public sequential order books, conservatively maps opposing game-winner tokens, and models displayed-depth costs under a $100 combined paper budget. Its ten-contract benchmark tracks illustrative near-break-even changes across runs. The research shortlist prioritizes observations with both books, a full observation interval within 20 seconds, and displayed depth for ten contracts. Missing evidence fails closed. These checks do **not** verify matching settlement rules, venue eligibility, fees, execution, or actual profitability. No trade is authorized. The GitHub workflows run the Python regression suite and publish research artifacts.
+
+**Settlement-rule verification remains blocked:** event-title matching and opposing team labels alone cannot prove equivalent resolution criteria. Independent venue rule text, cancellation/postponement/overtime treatment, settlement timing, and contract identifiers must be documented and manually approved before any candidate is described as verified. No automated approval based on titles or prices.
