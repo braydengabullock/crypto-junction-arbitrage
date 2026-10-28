@@ -173,6 +173,7 @@ def main():
         "verified_matches":0,
         "potential_title_matches_found":count,
         "candidates_returned":len(matches),
+        "candidate_limit":args.max_results,
         "snapshot_times":{"kalshi":k.get("observed_at"),"polymarket":p.get("observed_at")},
         "coverage_note":"Both source feeds are paginated samples; timing may differ.",
         "warning":"Title overlap DOES NOT imply equivalent rules, payout, executable prices, legal eligibility, or arbitrage. Do not trade.",
