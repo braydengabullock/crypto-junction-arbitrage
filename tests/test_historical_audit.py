@@ -1,0 +1,49 @@
+import unittest
+from historical_audit import evaluate, audit
+
+def sample():
+    return {
+        "id":"example","source_a":"Kalshi","source_b":"Polymarket",
+        "side_a":"YES","side_b":"NO","ask_a":"0.40","ask_b":"0.53",
+        "fee_a_per_contract":"0.01","fee_b_per_contract":"0.01",
+        "depth_a":100,"depth_b":100,
+        "verified_rule_equivalence":True,
+        "verified_execution_quotes":True,
+        "verified_trading_eligibility":True,
+        "verified_settlement":True,
+        "actual_payout_per_pair":"1.00",
+        "observed_quote_time_a":"2026-10-28T15:00:00Z",
+        "observed_quote_time_b":"2026-10-28T15:00:01Z",
+        "actual_settlement_time":"2026-10-28T16:00:00Z"}
+class HistoricalAuditTests(unittest.TestCase):
+    def test_example_is_only_conditional(self):
+        r=evaluate(sample())
+        self.assertEqual(r["status"],"CONDITIONAL_PAPER_RESULT")
+        self.assertEqual(r["contracts_per_leg"],100)
+        self.assertEqual(r["modeled_profit_usd"],"5.00")
+        self.assertIsNone(audit([sample()])["actual_realized_profit_usd"])
+    def test_missing_evidence_blocks(self):
+        p=sample();del p["verified_settlement"]
+        self.assertEqual(evaluate(p)["status"],"INSUFFICIENT_EVIDENCE")
+    def test_unverified_rules_block(self):
+        p=sample();p["verified_rule_equivalence"]=False
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_stale_pair_blocks(self):
+        p=sample();p["observed_quote_time_b"]="2026-10-28T15:10:00Z"
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_depth_blocks(self):
+        p=sample();p["depth_a"]=0
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_low_roi_blocks(self):
+        p=sample();p["ask_b"]="0.60"
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_budget(self):
+        r=evaluate(sample(),budget="50")
+        self.assertEqual(r["contracts_per_leg"],52)
+        self.assertEqual(r["modeled_cost_usd"],"49.40")
+    def test_never_report_earnings_on_empty_data(self):
+        r=audit([])
+        self.assertEqual(r["observations"],0)
+        self.assertIsNone(r["actual_realized_profit_usd"])
+if __name__=="__main__":
+    unittest.main()
