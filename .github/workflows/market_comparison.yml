@@ -243,15 +243,15 @@ jobs:
           try:
               trend = json.loads(Path("league_quote_quality_trends.json").read_text(encoding="utf-8"))
               lines.extend(["", "### Quote quality changes versus previous successful research snapshot",
-                            "| League | Earlier sample | Current sample | Earlier pass % | Current pass % | Change (pp) |",
-                            "|---|---:|---:|---:|---:|---:|"])
+                            "| League | Earlier sample | Current sample | Sample change % | Earlier pass % | Current pass % | Change (pp) |",
+                            "|---|---:|---:|---:|---:|---:|---:|"])
               for league, row in trend.get("by_league", {}).items():
                   def display(value):
                       return "n/a" if value is None else str(value)
                   lines.append("| " + str(league) + " | " +
                                " | ".join(display(row.get(field)) for field in (
-                                   "previous_pairs", "current_pairs", "previous_pass_rate_pct",
-                                   "current_pass_rate_pct", "change_percentage_points")) + " |")
+                                   "previous_pairs", "current_pairs", "sample_change_pct",
+                                   "previous_pass_rate_pct", "current_pass_rate_pct", "change_percentage_points")) + " |")
               lines.append("Two snapshots are insufficient to establish a consistent trend or profitable opportunities.")
           except (OSError, ValueError, TypeError):
               lines.append("Quote quality trend comparison unavailable; no improvement inferred.")
