@@ -98,3 +98,12 @@ To activate:
 If either secret is missing, the workflow still succeeds and no Telegram message is sent. The script reports that Telegram is disabled in its log.
 
 Do not enable trade opportunity alerts until the second authenticated feed, independently verified rules, account permissions, broker-level prices, and matched-depth checks are available.
+
+
+## V1.1 — Evidence-gated historical audit (not a performance claim)
+
+`historical_audit.py` accepts a JSON **array** of externally supplied historical paired observations, each with both synchronized quote timestamps, depth, fees, outcome verification, recorded settlement time, and actual payout per pair. Run locally with `python historical_audit.py --input local_historical_observations.json`. The output is `local_backtest_audit.json`.
+
+The audit enforces the $100 total paired budget and a 2% *entry-projected* return threshold; then records both gains **and losses** from supplied observed settlement outcomes. It reports `actual_realized_profit_usd: null` because neither source data nor historical fills are authenticated. Boolean evidence fields are externally supplied and cannot independently verify matching rules, executable order-book prices, account permissions or payouts. Do not interpret conditional paper results as a statistically valid win rate, verified return or assured profitability. Missing evidence is blocked. The currently captured Gamma/Kalshi snapshots are **insufficient** to run this full historical audit. The code has unit tests; check GitHub Actions for their results.
+
+The original `paper_journal.py` has also been corrected to use the evaluator's canonical `capital_usd` field when comparing expected payout, rather than a nonexistent `total_cost` field.
