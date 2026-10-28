@@ -10,6 +10,14 @@ class SportsIdentifierTests(unittest.TestCase):
   self.assertEqual(count,1)
   self.assertEqual(results[0]["match_method"],"sports_identifier_date_teams_research")
   self.assertFalse(results[0]["market_rules_verified"])
+ def test_real_game_ranked_above_false_final_match(self):
+  k={"ticker":"KXNBAGAME-26OCT28SASUTA-SAS","title":"San Antonio wins"}
+  real={"id":"GAME","slug":"nba-sas-uta-2026-10-28","question":"Spurs vs Jazz","enableOrderBook":True}
+  false={"id":"FINAL","slug":"will-san-antonio-spurs-win-2027-finals",
+         "question":"Will San Antonio win the NBA Finals?","enableOrderBook":True}
+  matches,_=compare({"markets":[k]},{"markets":[false,real]})
+  self.assertEqual(matches[0]["polymarket_id"],"GAME")
+  self.assertEqual(matches[0]["match_method"],"sports_identifier_date_teams_research")
  def test_date_or_team_mismatch_does_not_match(self):
   k={"ticker":"KXNBAGAME-26OCT28OKCDAL-OKC"}
   for slug in ("nba-okc-dal-2026-10-29","nba-okc-lal-2026-10-28","nfl-okc-dal-2026-10-28"):
