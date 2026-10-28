@@ -51,7 +51,7 @@ def combinations(report):
                    else "TOP_OF_BOOK_ONLY_NO_DEPTH_OR_FEE_VALIDATION",
             "net_roi_verified":False,"paper_trade_allowed":False})
     return {"research_only":True,"status":"PAIR_CANDIDATES_NOT_VALIDATED",
-            "total_budget_usd":"100","minimum_net_roi_pct":"2",
+            "total_budget_usd":"100","minimum_net_roi_pct":"greater_than_zero_after_all_costs",
             "combinations":result,"net_roi_verified":False,
             "reason":"Gamma prices are indicative, not executable asks; indicative sums do not establish depth, synchronization, fees, rules or net profit."}
 
