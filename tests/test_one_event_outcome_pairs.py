@@ -1,5 +1,5 @@
 import unittest
-from one_event_outcome_pairs import pair_game_winners
+from one_event_outcome_pairs import pair_game_winners, pair_game_winners_for_event
 class OutcomePairTests(unittest.TestCase):
     def test_distinct_outcomes_with_actual_labels(self):
         k={"markets":[{"ticker":"KXNBAGAME-26OCT28OKCDAL-OKC","title":"Oklahoma City Thunder wins"},
@@ -10,6 +10,20 @@ class OutcomePairTests(unittest.TestCase):
         self.assertEqual({x["team"] for x in pairs},{"OKC","DAL"})
         self.assertEqual({x["polymarket_token_id"] for x in pairs},{"100","200"})
         self.assertTrue(all(not x["market_rules_verified"] for x in pairs))
+    def test_reusable_event_and_requires_both_teams(self):
+        k={"markets":[{"ticker":"EVENT-ABC","title":"Alpha wins"},
+                      {"ticker":"EVENT-XYZ","title":"Beta wins"}]}
+        p={"markets":[{"id":"m","question":"Alpha vs Beta",
+                       "outcomes":'["A","B"]',"clobTokenIds":'["101","202"]'}]}
+        spec={"ABC":{"kalshi_title":"Alpha","polymarket_labels":["A"]},
+              "XYZ":{"kalshi_title":"Beta","polymarket_labels":["B"]}}
+        pairs=pair_game_winners_for_event(k,p,kalshi_event_ticker="EVENT",
+                    polymarket_question="Alpha vs Beta",teams=spec)
+        self.assertEqual(len(pairs),2)
+        self.assertFalse(any(x["market_rules_verified"] for x in pairs))
+        self.assertEqual(pair_game_winners_for_event({"markets":k["markets"][:1]},
+                     p,kalshi_event_ticker="EVENT",polymarket_question="Alpha vs Beta",
+                     teams=spec),[])
     def test_rejects_other_event_and_props(self):
         k={"markets":[{"ticker":"KXNBAGAME-26OCT29OKCDAL-OKC","title":"Oklahoma City Thunder wins"}]}
         p={"markets":[{"question":"First to score","outcomes":'["Thunder","Mavericks"]',"clobTokenIds":'["1","2"]'}]}
