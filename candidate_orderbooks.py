@@ -6,6 +6,7 @@ are not verified. Each request is timestamped and errors are recorded.
 """
 import argparse
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError
@@ -28,7 +29,19 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
         raise ValueError("Invalid candidates or cap")
     rows=[]
     selected=[c for c in candidates if allowed_tickers is None or c.get("kalshi_ticker") in allowed_tickers]
-    for candidate in selected[:max_pairs]:
+    # Interleave eligible leagues instead of consuming the first N (usually NBA).
+    buckets={}
+    for candidate in selected:
+        ticker=str(candidate.get("kalshi_ticker") or "")
+        league=ticker.split("GAME-",1)[0].removeprefix("KX") if "GAME-" in ticker else "OTHER"
+        buckets.setdefault(league,[]).append(candidate)
+    ordered=[]
+    while any(buckets.values()):
+        for league in sorted(buckets):
+            if buckets[league]:
+                ordered.append(buckets[league].pop(0))
+    sampled=ordered[:max_pairs]
+    for candidate in sampled:
         tokens=parse_tokens(candidate.get("polymarket_clob_token_ids"))
         ticker=candidate.get("kalshi_ticker")
         row={"kalshi_ticker":ticker,"polymarket_id":candidate.get("polymarket_id"),
@@ -58,9 +71,10 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         rows.append(row)
+    league_counts=Counter(str(r.get("kalshi_ticker") or "").split("GAME-",1)[0].removeprefix("KX") for r in rows)
     return {"research_only":True,"verified_opportunities":0,
             "candidate_count":len(candidates),"eligible_candidate_count":len(selected),"sampled_candidates":len(rows),
-            "captured_at":now(),"rows":rows,
+            "captured_at":now(),"sampled_leagues":dict(sorted(league_counts.items())),"rows":rows,
             "warning":"Sequential public books, potentially unmatched outcomes. No claims of trade eligibility, executable fills or net profit."}
 
 def main():
@@ -82,6 +96,6 @@ def main():
     result=collect(data.get("candidates",[]),max_pairs=args.max_pairs,allowed_tickers=allowed)
     Path(args.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
     print(json.dumps({"sampled_candidates":result["sampled_candidates"],
-                      "verified_opportunities":0,"output":args.output}))
+                      "verified_opportunities":0,"sampled_leagues":result["sampled_leagues"],"output":args.output}))
 if __name__=="__main__":
     main()
