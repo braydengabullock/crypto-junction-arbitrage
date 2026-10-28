@@ -79,6 +79,25 @@ jobs:
           else
             echo "Previous artifact unavailable; skipping trends."
           fi
+      - name: Check three-run sustained improvement (read only)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          IDS="$(gh run list --workflow market_comparison.yml --status success --limit 2 --json databaseId --jq '.[].databaseId')"
+          mkdir -p history_runs
+          COUNT=0
+          for ID in $IDS; do
+            if gh run download "$ID" --name "cross-exchange-research-$ID" --dir "history_runs/$ID" && [ -f "history_runs/$ID/near_miss_watchlist.json" ]; then
+              if [ "$COUNT" = "0" ]; then PREV="history_runs/$ID/near_miss_watchlist.json"; else OLDEST="history_runs/$ID/near_miss_watchlist.json"; fi
+              COUNT=$((COUNT+1))
+            fi
+          done
+          if [ "$COUNT" = "2" ]; then
+            python sustained_watchlist.py --oldest "$OLDEST" --previous "$PREV" --current near_miss_watchlist.json --output sustained_watchlist.json
+          else
+            echo "Insufficient saved history; three-run comparison skipped."
+          fi
       - name: Audit public orderbook evidence quality
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
@@ -158,6 +177,7 @@ jobs:
             depth_fee_illustrative.json
             near_miss_watchlist.json
             watchlist_trends.json
+            sustained_watchlist.json
             opposing_token_map.json
             orderbook_quality.json
             phase1_real_data_report.json
