@@ -37,15 +37,19 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             row["errors"].append("Missing Kalshi ticker or Polymarket token IDs")
             rows.append(row);continue
         try:
+            started=now()
             book=fetch_k(ticker)
-            row["observations"].append({"venue":"kalshi","observed_at":now(),"book":book})
+            completed=now()
+            row["observations"].append({"venue":"kalshi","request_started_at":started,"observed_at":completed,"book":book})
         except Exception as exc:
             row["errors"].append("Kalshi fetch failed: "+type(exc).__name__)
         for token in tokens[:2]:
             try:
+                started=now()
                 book=fetch_p(token)
+                completed=now()
                 row["observations"].append({"venue":"polymarket","token_id":token,
-                                             "observed_at":now(),"book":book})
+                                             "request_started_at":started,"observed_at":completed,"book":book})
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         rows.append(row)
