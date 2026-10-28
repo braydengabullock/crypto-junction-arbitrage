@@ -5,6 +5,7 @@ from urllib.error import HTTPError, URLError
 from datetime import datetime, timezone
 from orderbook_research import fetch_kalshi_book, fetch_polymarket_book
 from candidate_orderbooks import parse_tokens
+from one_event_outcome_pairs import pair_game_winners
 from orderbook_research import kalshi_buy_levels, polymarket_buy_levels
 
 def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_book):
@@ -73,6 +74,7 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
         report["status"]="NO_POLYMARKET_PUBLIC_ORDERBOOKS_RETURNED"
     else:
         report["status"]="BOOK_PROBE_ONLY_RULES_UNVERIFIED"
+    report["exact_outcome_candidates"]=pair_game_winners(k,p)
     report["price_evidence"]="CLOB order-book asks required for executable costing; Gamma outcomePrices, if present, are indicative only."
     report["clob_access_diagnosis"]="HTTP 403 indicates access refused; not evidence of empty order books. Do not use alternative networks, identities or endpoints to evade an access restriction."
     report["requires_manual_followup"]=["Check legitimate CLOB public access through official support/documentation","Verify settlement and postponement differences","Verify fee and FX schedules before net ROI"]
