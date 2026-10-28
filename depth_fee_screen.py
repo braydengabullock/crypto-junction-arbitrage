@@ -4,6 +4,7 @@ Cannot certify real net profit: contract outcome mapping/rules and actual fee ra
 still require independent verification. Never places orders.
 """
 import json
+from datetime import datetime
 from pathlib import Path
 from decimal import Decimal
 from orderbook_research import kalshi_buy_levels,polymarket_buy_levels,depth_cost
@@ -37,6 +38,16 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     best=None
                     closest=None
                     fixed_ten=None
+                    quote_quality={"both_books_present":True,"max_observation_span_seconds":None,"within_20_seconds":False,"sufficient_depth_for_ten":False}
+                    try:
+                        start=min(datetime.fromisoformat(str(x["request_started_at"]).replace("Z","+00:00")) for x in (ko,po))
+                        end=max(datetime.fromisoformat(str(x["observed_at"]).replace("Z","+00:00")) for x in (ko,po))
+                        span=(end-start).total_seconds()
+                        if span>=0:
+                            quote_quality["max_observation_span_seconds"]=span
+                            quote_quality["within_20_seconds"]=span<=20
+                    except (KeyError,ValueError,TypeError):
+                        pass
                     for n in range(1,101):
                         kc=depth_cost(kl,n);pc=depth_cost(pl,n)
                         if not (kc["depth_sufficient"] and pc["depth_sufficient"]): break
@@ -49,6 +60,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         if total>cap: break
                         profit=Decimal(n)-total
                         if n==10:
+                            quote_quality["sufficient_depth_for_ten"]=True
                             fixed_ten={"contracts_each":10,"total_cost_usd":str(total),
                                        "hypothetical_net_usd":str(profit)}
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
@@ -65,6 +77,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         result["near_misses"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                             "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
                             "scenario":closest,"fixed_ten_contract_pairs":fixed_ten,
+                            "quote_quality":quote_quality,
                             "candidate_only":True,"settlement_rules_verified":False})
                     if best:
                         result["rows"].append({"kalshi_ticker":row.get("kalshi_ticker"),
