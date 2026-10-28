@@ -13,7 +13,7 @@ from depth_pair_review import review
 def now():
     return datetime.now(timezone.utc).isoformat()
 
-def compare_one(*, ticker, token_id, kalshi_side, fee_kalshi, fee_polymarket,
+def compare_one(*, ticker, token_id, kalshi_side, fee_kalshi, fee_polymarket, other_cost_usd,
                 fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_book):
     if kalshi_side not in ("YES","NO"):
         raise ValueError("Choose Kalshi YES or NO")
@@ -27,7 +27,7 @@ def compare_one(*, ticker, token_id, kalshi_side, fee_kalshi, fee_polymarket,
     pz=now()
     result=review(kb,pb,kalshi_side=kalshi_side,observed_kalshi=kz,
                   observed_polymarket=pz,fee_kalshi=fee_kalshi,
-                  fee_polymarket=fee_polymarket,budget="100")
+                  fee_polymarket=fee_polymarket,other_cost_usd=other_cost_usd,budget="100")
     duration=(datetime.fromisoformat(pz)-datetime.fromisoformat(ka)).total_seconds()
     # Two non-atomic fetches: gate on the full uncertainty window.
     if duration>20 or duration<0:
@@ -50,11 +50,12 @@ def main():
     p.add_argument("--kalshi-side",choices=("YES","NO"),required=True)
     p.add_argument("--kalshi-fee-per-contract",required=True)
     p.add_argument("--polymarket-fee-per-contract",required=True)
+    p.add_argument("--other-cost-usd",required=True)
     p.add_argument("--output",default="one_event_paper_review.json")
     a=p.parse_args()
     result=compare_one(ticker=a.kalshi_ticker,token_id=a.polymarket_token_id,
         kalshi_side=a.kalshi_side,fee_kalshi=a.kalshi_fee_per_contract,
-        fee_polymarket=a.polymarket_fee_per_contract)
+        fee_polymarket=a.polymarket_fee_per_contract,other_cost_usd=a.other_cost_usd)
     Path(a.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
     print(json.dumps({"output":a.output,"research_only":True,
                       "scenarios":len(result["paper_review"]["scenarios"]),
