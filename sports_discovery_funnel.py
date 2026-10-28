@@ -43,7 +43,13 @@ def funnel(kalshi,polymarket,matches,mapping):
         "polymarket_coverage_complete":polymarket.get("data_quality",{}).get("pagination",{}).get("complete"),
         "matches_candidate_cap_reached":len(candidates)>=int(matches.get("candidate_limit",500)),
         "by_league":result,
-        "warning":"Discovery counts are not verified settlement matches or executable opportunities. A 100-candidate comparison cap can truncate mapping coverage."
+        "warning":("Discovery counts are not verified settlement matches or executable opportunities. "
+                   +("Candidate matching may be truncated at the configured cap of "
+                     +str(matches.get("candidate_limit",500))+". "
+                     if len(candidates)>=int(matches.get("candidate_limit",500)) else "")
+                   +("Polymarket collection is incomplete; observed mapping coverage may be understated. "
+                     if polymarket.get("data_quality",{}).get("pagination",{}).get("complete") is not True else "")
+                   +"Strict token mappings are research-only and do not verify settlement equivalence or executable depth.")
     }
 
 def main():
