@@ -124,3 +124,8 @@ Run `python -m unittest discover -s tests -v` to test all modules. GitHub workfl
 ## V1.4 — Rules-first research case pipeline
 
 `research_case.evaluate_research_case(case)` ties the manually entered settlement-rule dossier to the public orderbook cost evaluator. If either rule summary is incomplete, contradictory, or the selected YES/NO sides differ from the orderbook sides, **no price scenarios are produced**. If research rules agree, the evaluator may produce conditional *paper scenarios* under the combined $100 limit, but always sets `verified_arbitrage: false`, `trade_allowed: false`, and `realized_profit_usd: null`. Human-entered terms and public orderbooks are insufficient evidence of genuine equivalent settlement or actual achievable profits. No scheduled workflow places orders or sends actionable Telegram notices. Additional unit tests were added; confirm green GitHub Actions results before relying on the pipeline.
+
+
+## V1.5 — Traceable candidate review evidence
+
+The scheduled `market_comparison.py` workflow now includes original Kalshi rule excerpts, Polymarket descriptions/resolution-source metadata, available market dates and Polymarket CLOB token identifiers in each title-match candidate. It also provides a concrete human-review checklist. Official rules links are left `null` until verified; they are **never constructed from guesses**. This is a review queue, not independent validation or a trade alert. Venue eligibility and true orderbook fillability remain unresolved. Tests cover preservation of evidence and continued no-trade flags.
