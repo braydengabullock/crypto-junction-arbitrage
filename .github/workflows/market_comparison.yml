@@ -34,6 +34,8 @@ jobs:
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python readiness_report.py --kalshi "$K" --polymarket "$P" --output readiness_report.json
+      - name: Produce phase-one real-data test report
+        run: python phase1_real_data.py --matches research_matches.json --quality orderbook_quality.json --output phase1_real_data_report.json
       - name: Preserve research evidence
         uses: actions/upload-artifact@v4
         with:
@@ -44,5 +46,6 @@ jobs:
             readiness_report.json
             candidate_orderbooks.json
             orderbook_quality.json
+            phase1_real_data_report.json
           retention-days: 14
           if-no-files-found: error
