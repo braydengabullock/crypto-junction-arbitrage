@@ -25,6 +25,8 @@ jobs:
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Sample candidate public order books (research only)
+        run: python candidate_orderbooks.py --matches research_matches.json --max-pairs 5 --output candidate_orderbooks.json
       - name: Summarize evidence readiness
         run: |
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
@@ -38,5 +40,6 @@ jobs:
             snapshots/*.json
             research_matches.json
             readiness_report.json
+            candidate_orderbooks.json
           retention-days: 14
           if-no-files-found: error
