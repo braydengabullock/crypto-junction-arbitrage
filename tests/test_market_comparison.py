@@ -47,6 +47,15 @@ class ComparisonTests(unittest.TestCase):
         k={"markets":[{"ticker":"K","title":"Boston Celtics game"}]}
         p={"markets":[{"id":"P","question":"Boston Bruins Stanley Cup"}]}
         self.assertEqual(compare(k,p)[1],0)
+    def test_cross_category_bundle_is_not_simple_event_match(self):
+        k={"markets":[{"ticker":"KXMVECROSSCATEGORY-S2026-ABC",
+                       "title":"Both Teams To Score, Both Teams To Score, Both Teams To Score, Both Teams To Score, Both Teams To Score, Both Teams To Score"}]}
+        p={"markets":[{"id":"P","question":"Galatasaray vs Trabzonspor: Both Teams to Score"}]}
+        self.assertEqual(compare(k,p)[1],0)
+    def test_regular_short_sports_match_still_allowed(self):
+        k={"markets":[{"ticker":"KXNBA-ONE","title":"Boston Celtics vs New York Knicks"}]}
+        p={"markets":[{"id":"P","question":"Will Boston Celtics beat New York Knicks?"}]}
+        self.assertEqual(compare(k,p)[1],1)
     def test_unrelated(self):
         a={"markets":[{"ticker":"A","title":"Bitcoin halving next year"}]}
         b={"markets":[{"id":"B","question":"Oscar best picture winner"}]}
