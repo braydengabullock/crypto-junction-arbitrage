@@ -11,7 +11,9 @@ def compare(previous,current):
             try:
                 val=Decimal(str(r["illustrative_net_usd"]))
                 qty=int(r.get("contracts_each",0))
-                if val.is_finite():result[key]=(val,qty)
+                fixed=r.get("fixed_ten_contract_pairs") or {}
+                fixed_profit=Decimal(str(fixed["hypothetical_net_usd"])) if fixed.get("contracts_each")==10 else None
+                if val.is_finite():result[key]=(val,qty,fixed_profit)
             except (KeyError,InvalidOperation,TypeError):continue
         return result
     old=index(previous);new=index(current)
@@ -20,13 +22,19 @@ def compare(previous,current):
         prior=old.get(key)
         old_profit=prior[0] if prior is not None else None
         old_qty=prior[1] if prior is not None else None
-        new_profit,new_qty=value
+        new_profit,new_qty,new_fixed=value
+        old_fixed=prior[2] if prior is not None else None
+        benchmark_comparable=(old_fixed is not None and new_fixed is not None)
         same_size=old_qty==new_qty and new_qty>0 if prior is not None else False
         changes.append({"kalshi_ticker":key[0],"kalshi_side":key[1],
             "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
             "current_net_usd":str(new_profit),
             "previous_contracts_each":old_qty,"current_contracts_each":new_qty,
             "same_position_size":same_size,
+            "fixed_ten_previous_net_usd":str(old_fixed) if old_fixed is not None else None,
+            "fixed_ten_current_net_usd":str(new_fixed) if new_fixed is not None else None,
+            "fixed_ten_change_usd":str(new_fixed-old_fixed) if benchmark_comparable else None,
+            "fixed_ten_trend":("UNAVAILABLE" if not benchmark_comparable else "IMPROVING" if new_fixed>old_fixed else "WORSENING" if new_fixed<old_fixed else "UNCHANGED"),
             "change_usd":str(new_profit-old_profit) if same_size else None,
             "trend":"NEW" if prior is None else "SIZE_CHANGED_NOT_COMPARABLE" if not same_size else ("IMPROVING" if new_profit>old_profit else "WORSENING" if new_profit<old_profit else "UNCHANGED"),
             "research_only":True})
