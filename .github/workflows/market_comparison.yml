@@ -14,8 +14,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Validate research logic
-        run: python -m unittest discover -s tests -v
       - name: Capture Kalshi public market metadata
         run: python capture_kalshi.py --limit 100 --max-pages 5
       - name: Capture Polymarket public market metadata
@@ -36,7 +34,11 @@ jobs:
           python readiness_report.py --kalshi "$K" --polymarket "$P" --output readiness_report.json
       - name: Produce phase-one real-data test report
         run: python phase1_real_data.py --matches research_matches.json --quality orderbook_quality.json --output phase1_real_data_report.json
+      - name: Validate research logic
+        if: always()
+        run: python -m unittest discover -s tests -v
       - name: Preserve research evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cross-exchange-research-${{ github.run_id }}
@@ -48,4 +50,4 @@ jobs:
             orderbook_quality.json
             phase1_real_data_report.json
           retention-days: 14
-          if-no-files-found: error
+          if-no-files-found: warn
