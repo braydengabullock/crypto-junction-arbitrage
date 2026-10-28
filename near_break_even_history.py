@@ -1,5 +1,6 @@
 """Carry near-break-even streaks between archived comparison reports (read only)."""
 import json
+from decimal import Decimal
 from pathlib import Path
 
 def update(previous,current):
@@ -17,6 +18,9 @@ def update(previous,current):
         except (InvalidOperation,TypeError):
             close=False
         row["near_break_even_streak"]=prior+1 if close else 0
+    current["research_shortlist"]=sorted((r for r in current.get("changes",[]) if r.get("fixed_ten_current_net_usd") is not None),
+        key=lambda r:(-int(r.get("near_break_even_streak",0)),
+                      max(0,-Decimal(str(r["fixed_ten_current_net_usd"])))))[:5]
     current["persistent_near_break_even_pairs"]=sum(r.get("near_break_even_streak",0)>=2 for r in current.get("changes",[]))
     return current
 
