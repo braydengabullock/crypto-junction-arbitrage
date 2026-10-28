@@ -1,0 +1,36 @@
+name: Two-exchange comparison research (no trading)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 */4 * * *"
+permissions:
+  contents: read
+jobs:
+  comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate research logic
+        run: python -m unittest discover -s tests -v
+      - name: Capture Kalshi public market metadata
+        run: python capture_kalshi.py --limit 100 --max-pages 5
+      - name: Capture Polymarket public market metadata
+        run: python polymarket_public.py --limit 100 --max-pages 5
+      - name: Find titles requiring human resolution-rule review
+        run: |
+          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Preserve research evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-exchange-research-${{ github.run_id }}
+          path: |
+            snapshots/*.json
+            research_matches.json
+          retention-days: 14
+          if-no-files-found: error
