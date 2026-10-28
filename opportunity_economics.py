@@ -32,7 +32,14 @@ def diagnose(data):
         league_groups[league].append(row)
     by_league={}
     for league,group in sorted(league_groups.items()):
+        quality_ok=sum(x["quote_quality"].get("within_20_seconds") is True and
+                       x["quote_quality"].get("sufficient_depth_for_ten") is True
+                       for x in group if isinstance(x["quote_quality"],dict))
         by_league[league]={
+            "quality_screen_passed_pairs":quality_ok,
+            "quality_screen_unverified_pairs":len(group)-quality_ok,
+            "nonpositive_raw_spread_pairs":sum(Decimal(x["raw_displayed_spread_usd"])<=0 for x in group),
+            "friction_erased_pairs":sum(Decimal(x["raw_displayed_spread_usd"])>0 and Decimal(x["illustrative_net_usd"])<=0 for x in group),
             "pairs":len(group),
             "positive_raw_spread_pairs":sum(Decimal(x["raw_displayed_spread_usd"])>0 for x in group),
             "positive_illustrative_net_pairs":sum(Decimal(x["illustrative_net_usd"])>0 for x in group),
@@ -44,7 +51,7 @@ def diagnose(data):
             for category in ("RAW_SPREAD_NONPOSITIVE","FRICTION_ERASES_SPREAD","POSITIVE_ILLUSTRATIVE_UNVERIFIED")}
     return {"research_only":True,"trade_allowed":False,"verified_opportunities":0,
             "fixed_ten_pairs_analyzed":len(rows),"counts":counts,"by_league":by_league,"rows":rows,
-            "warning":"Fee assumptions, settlement equivalence and execution unverified. Categories describe only modeled fixed-ten economics."}
+            "warning":"Quality flags screen observation span and displayed depth only, not executable fills. Missing fixed-ten benchmarks are excluded from the economics denominator. Fees, settlement equivalence and execution remain unverified."}
 
 def main():
     p=argparse.ArgumentParser()
