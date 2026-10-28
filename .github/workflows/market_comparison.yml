@@ -317,6 +317,16 @@ jobs:
                             "- Neither status verifies actual fees, FX rates, market resolution or fills."])
           except (OSError, ValueError, TypeError):
               lines.append("Research shortlist cost evidence unavailable.")
+          try:
+              depth = json.loads(Path("depth_fee_illustrative.json").read_text(encoding="utf-8"))
+              positives = depth.get("rows", [])
+              different = sum(x.get("sizing_comparison", {}).get("different_optimal_quantities") is True for x in positives)
+              lines.extend(["", "### Position size: modeled dollar profit versus ROI",
+                            "- Hypothetical positive modeled scenarios: " + str(len(positives)),
+                            "- Different max-dollar-profit versus max-ROI sizes: " + str(different),
+                            "- Position sizing uses sampled displayed depth up to $5,000 total; neither optimum is a verified executable opportunity."])
+          except (OSError, ValueError, TypeError):
+              lines.append("Sizing comparison unavailable.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
