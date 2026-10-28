@@ -38,6 +38,12 @@ class PolymarketPublicTests(unittest.TestCase):
         self.assertEqual(len(markets),1)
         self.assertEqual(seen,["volume24hr","endDate"])
         self.assertTrue(info["deduplicated"])
+    def test_single_strategy_never_claims_full_coverage(self):
+        markets,meta=fetch_markets(limit=10,max_pages=1,
+          opener=lambda req,timeout:Response([{"id":"a"}]))
+        self.assertEqual(len(markets),1)
+        self.assertEqual(meta["strategies_sampled"],1)
+        self.assertFalse(meta["complete"])
     def test_reject_bad_response(self):
         with self.assertRaises(ValueError):
             fetch_markets(opener=lambda req,timeout:Response({"markets":[]}))
