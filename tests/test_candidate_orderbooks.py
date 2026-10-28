@@ -25,6 +25,34 @@ class CandidateBookTests(unittest.TestCase):
                    fetch_k=fail,fetch_p=fail)
         self.assertEqual(len(r["rows"][0]["errors"]),2)
         self.assertEqual(len(r["rows"][0]["observations"]),0)
+    def test_collection_diagnostics_distinguish_missing_books(self):
+        candidates=[
+            {"kalshi_ticker":"KXNBAGAME-26OCT28OKCDAL-OKC",
+             "polymarket_clob_token_ids":'["123"]'},
+            {"kalshi_ticker":"KXNHLGAME-26OCT28BOSTOR-BOS",
+             "polymarket_clob_token_ids":'["456"]'}]
+        def fetch_k(ticker):
+            if "NHL" in ticker: raise RuntimeError("unavailable")
+            return {"orderbook_fp":{}}
+        def fetch_p(token):
+            if token=="123": raise RuntimeError("unavailable")
+            return {"asks":[]}
+        r=collect(candidates,fetch_k=fetch_k,fetch_p=fetch_p)
+        self.assertEqual(r["collection_diagnostics"]["POLYMARKET_BOOK_MISSING"],1)
+        self.assertEqual(r["collection_diagnostics"]["KALSHI_BOOK_MISSING"],1)
+        self.assertEqual(r["collection_diagnostics_by_league"]["NBA"]["POLYMARKET_BOOK_MISSING"],1)
+        self.assertEqual(r["collection_diagnostics_by_league"]["NHL"]["KALSHI_BOOK_MISSING"],1)
+        self.assertEqual(r["verified_opportunities"],0)
+
+    def test_unsampled_candidates_and_missing_ids(self):
+        candidates=[{"kalshi_ticker":"KXNBAGAME-26OCT28OKCDAL-OKC",
+                     "polymarket_clob_token_ids":None},
+                    {"kalshi_ticker":"KXNHLGAME-26OCT28BOSTOR-BOS",
+                     "polymarket_clob_token_ids":'["123"]'}]
+        r=collect(candidates,max_pairs=1)
+        self.assertEqual(r["unsampled_eligible_candidates"],1)
+        self.assertEqual(r["collection_diagnostics"]["MISSING_IDENTIFIERS"],1)
+
     def test_no_tokens_no_request(self):
         r=collect([{"kalshi_ticker":"K","polymarket_clob_token_ids":None}])
         self.assertTrue(r["rows"][0]["errors"])
