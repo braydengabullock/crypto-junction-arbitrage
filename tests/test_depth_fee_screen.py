@@ -40,6 +40,19 @@ class DepthFeeTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    screen(data,poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.01",
           budget="5000.01",opposing_tokens={"LARGE|YES":"123"})
+ def test_roi_and_dollar_profit_optima_can_differ(self):
+  data={"rows":[{"kalshi_ticker":"SIZED","observations":[
+    {"venue":"kalshi","book":{"orderbook_fp":{"no_dollars":[["0.75","20"],["0.65","80"]],"yes_dollars":[]}}},
+    {"venue":"polymarket","token_id":"123","book":{"asks":[{"price":"0.50","size":"100"}]}}]}]}
+  result=screen(data,poly_rate="0",kalshi_multiplier="0",extra_cost="0",
+                budget="5000",opposing_tokens={"SIZED|YES":"123"})
+  item=result["rows"][0]
+  self.assertEqual(item["scenario"]["contracts_each"],100)
+  self.assertEqual(item["max_roi_scenario"]["contracts_each"],20)
+  self.assertTrue(item["sizing_comparison"]["different_optimal_quantities"])
+  self.assertGreater(Decimal(item["max_roi_scenario"]["hypothetical_roi_pct"]),
+                     Decimal(item["scenario"]["hypothetical_roi_pct"]))
+  self.assertFalse(result["trade_allowed"])
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
