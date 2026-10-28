@@ -29,7 +29,15 @@ def compare(previous,current):
         priority=("APPROACHING_BREAK_EVEN" if benchmark_comparable and new_fixed>old_fixed and new_fixed<0 and new_fixed>=Decimal("-0.25") else
                   "POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION" if new_fixed is not None and new_fixed>0 else
                   "MONITOR_ONLY")
-        changes.append({"monitoring_priority":priority,
+        previous_streak=0
+        if prior is not None:
+            for old_row in previous.get("changes",[]):
+                if (str(old_row.get("kalshi_ticker")),str(old_row.get("kalshi_side")),str(old_row.get("polymarket_token_id")))==key:
+                    previous_streak=int(old_row.get("near_break_even_streak",0)) if old_row.get("near_break_even_streak",0) is not None else 0
+                    break
+        close_now=new_fixed is not None and Decimal("-0.25")<=new_fixed<0
+        streak=(min(previous_streak,10000)+1) if close_now else 0
+        changes.append({"near_break_even_streak":streak,"monitoring_priority":priority,
             "distance_to_break_even_fixed_ten_usd":str(-new_fixed) if new_fixed is not None and new_fixed<0 else "0" if new_fixed is not None else None,"kalshi_ticker":key[0],"kalshi_side":key[1],
             "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
             "current_net_usd":str(new_profit),
@@ -49,6 +57,7 @@ def compare(previous,current):
         Decimal(x["distance_to_break_even_fixed_ten_usd"]) if x["distance_to_break_even_fixed_ten_usd"] is not None else Decimal("999999")))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
             "closest_fixed_ten_pairs":ranked[:5],
+            "near_break_even_streak_note":"Streak requires previous comparison report with changes; ordinary watchlist input resets history.",
             "fixed_ten_trend_counts":benchmark_counts,
             "monitoring_priority_counts":priority_counts,
             "trend_counts":counts,
