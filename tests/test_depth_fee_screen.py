@@ -27,6 +27,7 @@ class DepthFeeTests(unittest.TestCase):
   self.assertTrue(r["near_misses"])
   self.assertLessEqual(float(r["near_misses"][0]["scenario"]["hypothetical_net_usd"]),0)
   self.assertFalse(r["net_profit_verified"])
+  self.assertGreater(float(r["near_misses"][0]["scenario"]["minimum_total_cost_reduction_to_positive_usd"]),0)
  def test_costs_can_remove_positive_gross(self):
   r=screen(self.data,poly_rate="0.2",kalshi_multiplier="4",extra_cost="4",opposing_tokens={"K|YES":"123"})
   self.assertEqual(r["rows"],[])
