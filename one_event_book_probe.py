@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from orderbook_research import fetch_kalshi_book, fetch_polymarket_book
 from candidate_orderbooks import parse_tokens
+from orderbook_research import kalshi_buy_levels, polymarket_buy_levels
 
 def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_book):
     sources=evidence.get("sources",{})
@@ -34,7 +35,9 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
                 report["book_probes"].append({"venue":"kalshi","ticker":ticker,
                    "book_returned":True,
                    "yes_bid_levels":len(fp.get("yes_dollars",[])),
-                   "no_bid_levels":len(fp.get("no_dollars",[]))})
+                   "no_bid_levels":len(fp.get("no_dollars",[])),
+                   "yes_buy_best_ask":str(kalshi_buy_levels(book,"YES")[0][0]) if kalshi_buy_levels(book,"YES") else None,
+                   "no_buy_best_ask":str(kalshi_buy_levels(book,"NO")[0][0]) if kalshi_buy_levels(book,"NO") else None})
             except (ValueError,HTTPError,URLError,TimeoutError) as e:
                 report["errors"].append({"venue":"kalshi","ticker":ticker,
                     "kind":type(e).__name__,"http_status":getattr(e,"code",None)})
@@ -52,7 +55,8 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
                 book=fetch_p(token)
                 report["book_probes"].append({"venue":"polymarket",
                     "token_id":token,"book_returned":True,
-                    "ask_levels":len(book.get("asks",[]))})
+                    "ask_levels":len(book.get("asks",[])),
+                    "best_ask":str(polymarket_buy_levels(book)[0][0]) if polymarket_buy_levels(book) else None})
             except (ValueError,HTTPError,URLError,TimeoutError) as e:
                 report["errors"].append({"venue":"polymarket","token_id":token,
                     "kind":type(e).__name__,"http_status":getattr(e,"code",None)})
