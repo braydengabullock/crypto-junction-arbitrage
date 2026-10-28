@@ -1,0 +1,29 @@
+import unittest
+from candidate_orderbooks import collect,parse_tokens
+
+class CandidateBookTests(unittest.TestCase):
+    def test_token_list(self):
+        self.assertEqual(parse_tokens('["123","456"]'),["123","456"])
+        self.assertEqual(parse_tokens("broken"),[])
+    def test_empty(self):
+        self.assertEqual(collect([])["sampled_candidates"],0)
+    def test_fetches_and_never_verifies(self):
+        r=collect([{"kalshi_ticker":"K","polymarket_id":"P",
+                     "polymarket_clob_token_ids":'["123","456"]'}],
+                  fetch_k=lambda _:{"orderbook_fp":{}},
+                  fetch_p=lambda _:{"asks":[]})
+        self.assertEqual(len(r["rows"][0]["observations"]),3)
+        self.assertEqual(r["verified_opportunities"],0)
+        self.assertFalse(r["rows"][0]["executable_opportunity_verified"])
+    def test_failure_is_visible(self):
+        def fail(_): raise RuntimeError("no data")
+        r=collect([{"kalshi_ticker":"K",
+                    "polymarket_clob_token_ids":'["123"]'}],
+                   fetch_k=fail,fetch_p=fail)
+        self.assertEqual(len(r["rows"][0]["errors"]),2)
+        self.assertEqual(len(r["rows"][0]["observations"]),0)
+    def test_no_tokens_no_request(self):
+        r=collect([{"kalshi_ticker":"K","polymarket_clob_token_ids":None}])
+        self.assertTrue(r["rows"][0]["errors"])
+if __name__=="__main__":
+    unittest.main()
