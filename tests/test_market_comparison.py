@@ -27,6 +27,19 @@ class ComparisonTests(unittest.TestCase):
         self.assertIsNone(matches[0]["kalshi_rule_url"])
         self.assertFalse(matches[0]["market_rules_verified"])
         self.assertGreater(len(matches[0]["review_required"]),0)
+    def test_sports_subtitle_is_discoverable_but_never_verified(self):
+        k={"markets":[{"ticker":"K-NBA","title":"NBA game winner",
+                       "subtitle":"Boston Celtics versus New York Knicks"}]}
+        p={"markets":[{"id":"P-NBA","question":"Will Boston Celtics beat New York Knicks?"}]}
+        matches,count=compare(k,p)
+        self.assertGreaterEqual(count,1)
+        self.assertTrue(matches[0]["sports_candidate"])
+        self.assertFalse(matches[0]["market_rules_verified"])
+        self.assertFalse(matches[0]["tradable"])
+    def test_one_shared_team_name_is_not_enough(self):
+        k={"markets":[{"ticker":"K","title":"Boston Celtics game"}]}
+        p={"markets":[{"id":"P","question":"Boston Bruins Stanley Cup"}]}
+        self.assertEqual(compare(k,p)[1],0)
     def test_unrelated(self):
         a={"markets":[{"ticker":"A","title":"Bitcoin halving next year"}]}
         b={"markets":[{"id":"B","question":"Oscar best picture winner"}]}
