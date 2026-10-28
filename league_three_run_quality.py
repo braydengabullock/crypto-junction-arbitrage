@@ -20,11 +20,16 @@ def assess(oldest, previous, current, min_pairs=3):
                 raise ValueError("Invalid sample counts")
             counts.append(n)
             rates.append(round(passed*100/n,1) if n else None)
+        spreads=[int(s.get("by_league",{}).get(league,{}).get("positive_raw_spread_pairs",0)) for s in snapshots]
+        if any(v<0 or v>n for v,n in zip(spreads,counts)):
+            raise ValueError("Invalid raw spread counts")
         eligible=all(n>=min_pairs for n in counts)
         improving=eligible and rates[0]<rates[1]<rates[2]
         rows[league]={"pairs_by_run":counts,"pass_rates_pct_by_run":rates,
                       "minimum_samples_met":eligible,
                       "three_run_improvement_observed":improving,
+                      "positive_raw_spread_pairs_by_run":spreads,
+                      "positive_raw_spread_in_every_run":eligible and all(v>0 for v in spreads),
                       "status":"DESCRIPTIVE_THREE_RUN_IMPROVEMENT" if improving else
                                ("INSUFFICIENT_SAMPLES" if not eligible else "NO_CONSISTENT_IMPROVEMENT")}
     return {"research_only":True,"trade_allowed":False,"verified_opportunities":0,
