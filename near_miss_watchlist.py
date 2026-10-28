@@ -24,7 +24,19 @@ def rank(report, limit=10):
                 fixed_gain=Decimal(str(fixed["hypothetical_net_usd"]))
                 if not fixed_gain.is_finite(): fixed_gain=None
             except (KeyError,ValueError,InvalidOperation,TypeError): fixed_gain=None
-        rows.append({"kalshi_ticker":item.get("kalshi_ticker"),
+        fx_supplied=report.get("fx_cost_supplied") is True
+        allocation=scenario.get("venue_allocation",{})
+        allocation_present=(isinstance(allocation,dict) and
+                            all(k in allocation for k in ("kalshi_displayed_usd",
+                                "polymarket_displayed_usd","modeled_fees_and_extra_usd",
+                                "assumed_fx_cost_usd")))
+        cost_status=("MODELED_COST_INPUTS_PRESENT_UNVERIFIED" if fx_supplied and allocation_present
+                     else "INCOMPLETE_COST_INPUTS")
+        rows.append({"cost_evidence_status":cost_status,
+                     "modeled_positive_unverified":gain>0,
+                     "net_roi_tier":scenario.get("net_roi_tier"),
+                     "venue_allocation":allocation if allocation_present else None,
+                     "kalshi_ticker":item.get("kalshi_ticker"),
                      "polymarket_token_id":item.get("polymarket_token_id"),
                      "kalshi_side":item.get("kalshi_side"),
                      "contracts_each":quantity,"combined_cost_usd":str(cost),
@@ -38,6 +50,8 @@ def rank(report, limit=10):
     rows.sort(key=lambda x:(Decimal(x["cost_reduction_for_one_cent_profit_usd"]),-Decimal(x["illustrative_net_usd"])))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
             "status":"RANKED_NEAR_MISSES_NOT_EXECUTABLE","total_priced":len(rows),
+            "cost_inputs_complete_for_model_count":sum(x["cost_evidence_status"]=="MODELED_COST_INPUTS_PRESENT_UNVERIFIED" for x in rows),
+            "positive_but_cost_incomplete_count":sum(x["modeled_positive_unverified"] and x["cost_evidence_status"]=="INCOMPLETE_COST_INPUTS" for x in rows),
             "watchlist":rows[:limit],"warning":"Illustrative cost assumptions, sequential books, and unverified settlement terms."}
 
 if __name__=="__main__":
