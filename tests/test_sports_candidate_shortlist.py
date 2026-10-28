@@ -11,6 +11,12 @@ class ShortlistTests(unittest.TestCase):
         r=shortlist({"candidates":[b,a,a]})
         self.assertEqual(r["sports_candidates_returned"],1)
         self.assertFalse(r["candidates"][0]["net_roi_verified"])
+    def test_rejects_parlay_and_crosscategory_false_pairs(self):
+        a={"kalshi_ticker":"KXCROSSCATEGORY-FOO","polymarket_id":"P",
+           "kalshi_title":"NBA basketball game","polymarket_question":"NBA basketball game",
+           "sports_candidate":True,"title_similarity":1}
+        b=dict(a,kalshi_ticker="KXPARLAY-FOO",polymarket_id="P2")
+        self.assertEqual(shortlist({"candidates":[a,b]})["sports_candidates_returned"],0)
     def test_limit(self):
         with self.assertRaises(ValueError): shortlist({},limit=0)
 if __name__=="__main__": unittest.main()
