@@ -28,6 +28,8 @@ jobs:
         run: python kalshi_sports_capture.py
       - name: Capture Polymarket public market metadata
         run: python polymarket_public.py --limit 100 --max-pages 10
+      - name: Diagnose Polymarket public CLOB access without bypasses
+        run: python clob_access_diagnostic.py
       - name: Find titles requiring human resolution-rule review
         run: |
           K="kalshi_sports_snapshot.json"
@@ -79,6 +81,7 @@ jobs:
               ("sports_candidate_shortlist.json", ("sports_candidates_returned", "verified_paired_opportunities")),
               ("sports_event_leads.json", ("groups_found", "skipped_missing_identifiers", "verified_pairs")),
               ("indicative_candidate_screen.json", ("status", "candidate_outcomes")),
+              ("clob_access_diagnostic.json", ("access_conclusion", "requests")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -126,5 +129,6 @@ jobs:
             one_event_book_probe.json
             one_event_pair_combinations.json
             indicative_candidate_screen.json
+            clob_access_diagnostic.json
           retention-days: 14
           if-no-files-found: warn
