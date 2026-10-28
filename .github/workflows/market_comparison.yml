@@ -292,6 +292,20 @@ jobs:
               lines.append("Trend observations do not verify trading eligibility, settlement rules, or executable prices.")
           except (OSError, ValueError, TypeError):
               lines.append("Three-run quote-quality results unavailable or history insufficient.")
+          try:
+              illustrated = json.loads(Path("depth_fee_illustrative.json").read_text(encoding="utf-8"))
+              tiers = {"SMALL_POSITIVE":0, "HIGHER_PRIORITY_0_5_PLUS":0, "EXCEPTIONAL_2_PLUS":0}
+              for candidate in illustrated.get("rows", []):
+                  tier = candidate.get("scenario", {}).get("net_roi_tier")
+                  if tier in tiers:
+                      tiers[tier] += 1
+              lines.extend(["", "### Revised positive-net ROI research tiers (not executable)",
+                            "- Small positive (above 0%, below 0.5%): " + str(tiers["SMALL_POSITIVE"]),
+                            "- Higher priority (0.5% to below 2%): " + str(tiers["HIGHER_PRIORITY_0_5_PLUS"]),
+                            "- Exceptional (2% or greater): " + str(tiers["EXCEPTIONAL_2_PLUS"]),
+                            "- $100 maximum modeled combined stake; all fees and currency costs require verification."])
+          except (OSError, ValueError, TypeError):
+              lines.append("Positive-net ROI tier counts unavailable.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
