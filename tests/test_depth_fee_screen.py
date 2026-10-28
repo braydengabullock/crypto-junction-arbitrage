@@ -27,6 +27,19 @@ class DepthFeeTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    screen(self.data,poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.01",
           fx_cost="-0.01",opposing_tokens={"K|YES":"123"})
+ def test_budget_up_to_5000_and_larger_book_depth(self):
+  data={"rows":[{"kalshi_ticker":"LARGE","observations":[
+    {"venue":"kalshi","book":{"orderbook_fp":{"no_dollars":[["0.65","2000"]],"yes_dollars":[]}}},
+    {"venue":"polymarket","token_id":"123","book":{"asks":[{"price":"0.50","size":"2000"}]}}]}]}
+  result=screen(data,poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.01",
+                budget="5000",opposing_tokens={"LARGE|YES":"123"})
+  self.assertEqual(result["max_combined_research_budget_usd"],"5000")
+  self.assertGreater(result["rows"][0]["scenario"]["contracts_each"],100)
+  self.assertLessEqual(Decimal(result["rows"][0]["scenario"]["total_cost_usd"]),Decimal("5000"))
+  self.assertFalse(result["trade_allowed"])
+  with self.assertRaises(ValueError):
+   screen(data,poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.01",
+          budget="5000.01",opposing_tokens={"LARGE|YES":"123"})
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
