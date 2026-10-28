@@ -31,6 +31,33 @@ class DiscoveryFunnelTests(unittest.TestCase):
         self.assertEqual(r["identifier_matched_but_unmapped_events"],1)
         self.assertEqual(r["mapping_coverage_pct_of_matched_sides"],50.0)
 
+    def test_orphan_candidates_and_empty_mapping_are_excluded(self):
+        a="KXNBAGAME-26OCT28OKCDAL-OKC"
+        orphan="KXNBAGAME-26OCT29BOSNYK-BOS"
+        k={"markets":[{"ticker":a}]}
+        matches={"candidate_limit":500,"candidates":[
+            {"kalshi_ticker":a,"match_method":"sports_identifier_date_teams_research"},
+            {"kalshi_ticker":orphan,"match_method":"sports_identifier_date_teams_research"}]}
+        mapping={"opposing_token_map":{a+"|YES":"",orphan+"|YES":"token"}}
+        r=funnel(k,{"markets":[]},matches,mapping)["by_league"]["NBA"]
+        self.assertEqual(r["exact_identifier_matched_sides"],1)
+        self.assertEqual(r["strict_opposing_token_mapped_sides"],0)
+        self.assertEqual(r["identifier_matched_but_unmapped_sides"],1)
+        self.assertEqual(r["discovery_bottleneck"],"TOKEN_MAPPING")
+
+    def test_bottleneck_identifies_missing_match_and_downstream_review(self):
+        a="KXNBAGAME-26OCT28OKCDAL-OKC"
+        k={"markets":[{"ticker":a}]}
+        p={"markets":[]}
+        empty=funnel(k,p,{"candidate_limit":500,"candidates":[]},{"opposing_token_map":{}})
+        self.assertEqual(empty["by_league"]["NBA"]["discovery_bottleneck"],"IDENTIFIER_MATCHING")
+        matches={"candidate_limit":500,"candidates":[
+            {"kalshi_ticker":a,"match_method":"sports_identifier_date_teams_research"}]}
+        mapped=funnel(k,p,matches,{"opposing_token_map":{a+"|YES":"token"}})
+        self.assertEqual(mapped["by_league"]["NBA"]["discovery_bottleneck"],"DOWNSTREAM_PRICE_AND_RULE_REVIEW")
+        self.assertEqual(mapped["by_league"]["NBA"]["identifier_coverage_pct_of_discovered_sides"],100.0)
+        self.assertEqual(mapped["verified_opportunities"],0)
+
     def test_warning_reflects_actual_cap_and_incomplete_collection(self):
         r=funnel({"markets":[]},{"markets":[],"data_quality":{"pagination":{"complete":False}}},
                  {"candidate_limit":2,"candidates":[{},{}]},{"opposing_token_map":{}})
