@@ -18,6 +18,7 @@ class LeagueSamplingTests(unittest.TestCase):
         second=dict(first)
         second["kalshi_ticker"]=first["kalshi_ticker"].rsplit("-",1)[0]+"-BBB"
         other=candidate("NBA",2)
+        other["kalshi_ticker"]="KXNBAGAME-26OCT29ABCDEF-AAA"
         result=collect([first,second,other],max_pairs=2,
                        fetch_k=lambda ticker:{},fetch_p=lambda token:{})
         self.assertEqual(result["distinct_events_sampled"],2)
