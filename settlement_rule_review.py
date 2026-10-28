@@ -11,6 +11,38 @@ CHECKS=("event_identity","outcome_definition","overtime","tie_handling",
         "resolution_source","determination_time","settlement_currency",
         "payout_amount")
 
+def tokens(value):
+    if isinstance(value,str):
+        try:
+            value=json.loads(value)
+        except (ValueError,TypeError):
+            return []
+    return [str(x) for x in value] if isinstance(value,list) else []
+
+def enrich(report,kalshi,polymarket):
+    """Attach source fields from saved public snapshots; no equivalence inference."""
+    ks={str(m.get("ticker")):m for m in kalshi.get("markets",[]) if m.get("ticker")}
+    ps={}
+    for m in polymarket.get("markets",[]):
+        for token in tokens(m.get("clobTokenIds")):
+            ps[token]=m
+    for row in report["review_records"]:
+        k=ks.get(row["kalshi_ticker"],{})
+        p=ps.get(row["polymarket_token_id"],{})
+        ticker=row["kalshi_ticker"]
+        row["kalshi_rule_source_url"]="https://kalshi.com/markets/"+ticker if k else None
+        row["polymarket_rule_source_url"]=("https://polymarket.com/event/"+str(p["slug"])) if p.get("slug") else None
+        row["kalshi_rule_text"]=k.get("rules_primary") or None
+        row["kalshi_rules_secondary"]=k.get("rules_secondary") or None
+        row["polymarket_rule_text"]=p.get("description") or None
+        row["polymarket_resolution_source"]=p.get("resolutionSource") or None
+        row["polymarket_market_id"]=str(p["id"]) if p.get("id") is not None else None
+        row["source_fields_collected"]=bool(row["kalshi_rule_text"] and row["polymarket_rule_text"])
+        row["status"]="RULE_TEXT_COLLECTED_REVIEW_REQUIRED" if row["source_fields_collected"] else "RULE_EVIDENCE_INCOMPLETE"
+        row["rule_equivalence_verified"]=False
+    report["records_with_both_rule_texts"]=sum(x["source_fields_collected"] for x in report["review_records"])
+    return report
+
 def build(mapping):
     if mapping.get("mapping_method")!="exact_event_id_and_two_unambiguous_outcome_labels":
         raise ValueError("Unsupported mapping")
@@ -47,10 +79,17 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument("--mapping",required=True)
     p.add_argument("--output",default="settlement_rule_review.json")
+    p.add_argument("--kalshi",help="Saved public Kalshi snapshot")
+    p.add_argument("--polymarket",help="Saved public Polymarket snapshot")
     a=p.parse_args()
+    if bool(a.kalshi)!=bool(a.polymarket):
+        p.error("Both venue snapshots are required together")
     mapping=json.loads(Path(a.mapping).read_text(encoding="utf-8"))
     result=build(mapping)
+    if a.kalshi:
+        result=enrich(result,json.loads(Path(a.kalshi).read_text(encoding="utf-8")),
+                      json.loads(Path(a.polymarket).read_text(encoding="utf-8")))
     Path(a.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
-    print(json.dumps({"review_records":len(result["review_records"]),"verified_pairs":0}))
+    print(json.dumps({"review_records":len(result["review_records"]),"verified_pairs":0,"records_with_both_rule_texts":result.get("records_with_both_rule_texts",0)}))
 if __name__=="__main__":
     main()
