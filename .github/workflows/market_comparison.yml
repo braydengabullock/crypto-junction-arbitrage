@@ -31,6 +31,10 @@ jobs:
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Screen multi-market indicative outcome candidates (no executable quote)
+        run: |
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python indicative_candidate_screen.py --matches research_matches.json --polymarket "$P" --output indicative_candidate_screen.json
       - name: Diagnose discovery coverage and near-match examples
         run: |
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
@@ -66,6 +70,7 @@ jobs:
               ("preflight_report.json", ("observation_usable", "issues")),
               ("one_event_book_probe.json", ("status", "both_event_apis_returned", "rule_equivalence_verified")),
               ("one_event_pair_combinations.json", ("status", "net_roi_verified")),
+              ("indicative_candidate_screen.json", ("status", "candidate_outcomes")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -109,5 +114,6 @@ jobs:
             one_event_discovery.json
             one_event_book_probe.json
             one_event_pair_combinations.json
+            indicative_candidate_screen.json
           retention-days: 14
           if-no-files-found: warn
