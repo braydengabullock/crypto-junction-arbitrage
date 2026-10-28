@@ -145,7 +145,7 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                     "tradable":False,
                     "status":"MANUAL_REVIEW_ONLY"
                 })
-    results.sort(key=lambda item:item["title_similarity"],reverse=True)
+    results.sort(key=lambda item:(item["match_method"]=="sports_identifier_date_teams_research",item["title_similarity"]),reverse=True)
     return results[:max_results],len(results)
 
 def read_snapshot(path, expected):
