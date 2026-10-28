@@ -77,6 +77,8 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
     report["clob_access_diagnosis"]="HTTP 403 indicates access refused; not evidence of empty order books. Do not use alternative networks, identities or endpoints to evade an access restriction."
     report["requires_manual_followup"]=["Check legitimate CLOB public access through official support/documentation","Verify settlement and postponement differences","Verify fee and FX schedules before net ROI"]
     report["paper_net_roi_calculable"]=False
+    report["polymarket_international_execution_eligible_for_bc_resident"]=False
+    report["venue_scope"]="Public research only. Polymarket International excluded as an executable venue for BC-based deployment."
     report["warning"]="No verified fee-adjusted net ROI or tradable arbitrage. If CLOB HTTP 403 persists, do not bypass access restrictions."
     return report
 
