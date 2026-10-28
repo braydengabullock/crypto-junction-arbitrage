@@ -26,7 +26,7 @@ def funnel(kalshi,polymarket,matches,mapping):
            and m.get("match_method")=="sports_identifier_date_teams_research"]
         tickers={str(m.get("kalshi_ticker")) for m in c}
         mapped_tickers={key.rsplit("|",1)[0] for key in mapped if
-                        key.endswith("|YES") and league_for(key.rsplit("|",1)[0])==league}
+                        key.endswith("|YES") and league_for(key.rsplit("|",1)[0])==league} & tickers
         result[league]={
             "kalshi_contract_sides_discovered":len(k),
             "kalshi_distinct_events_discovered":len({event_for(m.get("ticker")) for m in k}),
@@ -35,6 +35,8 @@ def funnel(kalshi,polymarket,matches,mapping):
             "strict_opposing_token_mapped_sides":len(mapped_tickers),
             "strict_opposing_token_mapped_events":len({event_for(t) for t in mapped_tickers}),
             "identifier_matched_but_unmapped_sides":len(tickers-mapped_tickers),
+            "identifier_matched_but_unmapped_events":len({event_for(t) for t in tickers-mapped_tickers}),
+            "mapping_coverage_pct_of_matched_sides":round(100*len(mapped_tickers)/len(tickers),1) if tickers else None,
             "identifier_match_missing_sides":len({str(m.get("ticker")) for m in k}-tickers)
         }
     return {
