@@ -171,6 +171,29 @@ jobs:
                             "- Book errors: " + str(event.get("errors",[])), ""])
           except (OSError,ValueError):
               lines.append("One-game evidence report unavailable.")
+          try:
+              funnel = json.loads(Path("sports_discovery_funnel.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Discovery bottleneck by league",
+                            "| League | Discovered | Matched | Mapped | Match % | Mapping % | Bottleneck |",
+                            "|---|---:|---:|---:|---:|---:|---|"])
+              for league, row in funnel.get("by_league", {}).items():
+                  def pct(value):
+                      return "n/a" if value is None else str(value) + "%"
+                  lines.append("| " + str(league) + " | " +
+                               " | ".join(str(row.get(key, 0)) for key in (
+                                   "kalshi_contract_sides_discovered",
+                                   "exact_identifier_matched_sides",
+                                   "strict_opposing_token_mapped_sides")) + " | " +
+                               pct(row.get("identifier_coverage_pct_of_discovered_sides")) + " | " +
+                               pct(row.get("mapping_coverage_pct_of_matched_sides")) + " | " +
+                               str(row.get("discovery_bottleneck", "UNKNOWN")) + " |")
+              if funnel.get("matches_candidate_cap_reached"):
+                  lines.append("**Coverage warning:** Candidate comparison reached its configured cap.")
+              if funnel.get("polymarket_coverage_complete") is not True:
+                  lines.append("**Coverage warning:** Polymarket pagination is incomplete or unverified.")
+              lines.append("Mapping counts are research-only; settlement rules, depth, fees and executable opportunities are not verified.")
+          except (OSError, ValueError, TypeError) as exc:
+              lines.append("Discovery bottleneck summary unavailable (" + type(exc).__name__ + ").")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
