@@ -14,5 +14,7 @@ class InspectionTests(unittest.TestCase):
     def test_missing_event_does_not_invent_contracts(self):
         r=inspect({"sources":{}})
         self.assertEqual(r["book_probes"],[])
+        self.assertEqual(r["status"],"EVENT_DISCOVERY_INCOMPLETE")
+        self.assertFalse(r["both_event_apis_returned"])
         self.assertFalse(r["tradable"])
 if __name__=="__main__": unittest.main()
