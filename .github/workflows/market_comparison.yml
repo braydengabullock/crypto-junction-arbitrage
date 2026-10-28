@@ -110,6 +110,27 @@ jobs:
           else
             echo "Insufficient saved history; three-run comparison skipped."
           fi
+      - name: Review three-run league quote quality (read only)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          IDS="$(gh run list --workflow market_comparison.yml --status success --limit 8 --json databaseId --jq '.[].databaseId')"
+          mkdir -p quality_history
+          COUNT=0
+          for ID in $IDS; do
+            if gh run download "$ID" --name "cross-exchange-research-$ID" --dir "quality_history/$ID" && [ -f "quality_history/$ID/opportunity_economics.json" ]; then
+              if [ "$COUNT" = "0" ]; then PREV="quality_history/$ID/opportunity_economics.json"; fi
+              if [ "$COUNT" = "1" ]; then OLDEST="quality_history/$ID/opportunity_economics.json"; fi
+              COUNT=$((COUNT+1))
+            fi
+            if [ "$COUNT" = "2" ]; then break; fi
+          done
+          if [ "$COUNT" = "2" ] && [ -f opportunity_economics.json ]; then
+            python league_three_run_quality.py --oldest "$OLDEST" --previous "$PREV" --current opportunity_economics.json --min-pairs 3 --output league_three_run_quality.json
+          else
+            echo "Insufficient previous research artifacts for three-run quality check."
+          fi
       - name: Generate unverified settlement rule review records
         run: |
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
@@ -255,6 +276,20 @@ jobs:
               lines.append("Two snapshots are insufficient to establish a consistent trend or profitable opportunities.")
           except (OSError, ValueError, TypeError):
               lines.append("Quote quality trend comparison unavailable; no improvement inferred.")
+          try:
+              three = json.loads(Path("league_three_run_quality.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Three-run league quote quality (descriptive only)",
+                            "| League | Priced observations per run | Pass rates % | Minimum sample met | Strictly improving |",
+                            "|---|---|---|---|---|"])
+              for league, row in three.get("by_league", {}).items():
+                  lines.append("| " + str(league) + " | " +
+                               str(row.get("pairs_by_run", [])) + " | " +
+                               str(row.get("pass_rates_pct_by_run", [])) + " | " +
+                               str(row.get("minimum_samples_met", False)) + " | " +
+                               str(row.get("three_run_improvement_observed", False)) + " |")
+              lines.append("Trend observations do not verify trading eligibility, settlement rules, or executable prices.")
+          except (OSError, ValueError, TypeError):
+              lines.append("Three-run quote-quality results unavailable or history insufficient.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
@@ -281,6 +316,7 @@ jobs:
             depth_fee_illustrative.json
             opportunity_economics.json
             league_quote_quality_trends.json
+            league_three_run_quality.json
             near_miss_watchlist.json
             watchlist_trends.json
             sustained_watchlist.json
