@@ -21,8 +21,8 @@ def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
     if not 1 <= limit <= 100 or not 1 <= max_pages <= 20:
         raise ValueError("Invalid pagination limit")
     markets, seen = [], set()
-    plans = [("volume_24hr", False, (max_pages + 1)//2),
-             ("end_date", True, max_pages//2)]
+    plans = [("volume24hr", False, (max_pages + 1)//2),
+             ("endDate", True, max_pages//2)]
     details = []
     all_complete = True
     for order, ascending, pages in plans:
