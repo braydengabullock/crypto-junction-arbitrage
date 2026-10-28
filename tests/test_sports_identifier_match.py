@@ -1,5 +1,5 @@
 import unittest
-from market_comparison import sports_identifier_match,compare
+from market_comparison import sports_identifier_match,compare,tokenize
 class SportsIdentifierTests(unittest.TestCase):
  def test_matching_game_without_title_similarity(self):
   k={"ticker":"KXNBAGAME-26OCT28OKCDAL-OKC","title":"Oklahoma City Thunder"}
@@ -18,6 +18,8 @@ class SportsIdentifierTests(unittest.TestCase):
   self.assertTrue(sports_identifier_match(
     {"ticker":"KXNBAGAME-26OCT28OKCDAL-DAL"},
     {"slug":"nba-dal-okc-2026-10-28"}))
+ def test_alias_expands_with_word_boundaries(self):
+  self.assertEqual(tokenize("LA vs NY"),{"los","angeles","new","york"})
  def test_compound_excluded(self):
   k={"ticker":"KXCROSSCATEGORY-26OCT28OKCDAL-OKC","title":"NBA"}
   self.assertFalse(sports_identifier_match(k,{"slug":"nba-okc-dal-2026-10-28"}))
