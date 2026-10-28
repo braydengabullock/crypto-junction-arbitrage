@@ -41,7 +41,7 @@ def funnel(kalshi,polymarket,matches,mapping):
         "research_only":True,"verified_opportunities":0,
         "polymarket_markets_sampled":len(pmarkets),
         "polymarket_coverage_complete":polymarket.get("data_quality",{}).get("pagination",{}).get("complete"),
-        "matches_candidate_cap_reached":len(candidates)>=100,
+        "matches_candidate_cap_reached":len(candidates)>=int(matches.get("candidate_limit",500)),
         "by_league":result,
         "warning":"Discovery counts are not verified settlement matches or executable opportunities. A 100-candidate comparison cap can truncate mapping coverage."
     }
