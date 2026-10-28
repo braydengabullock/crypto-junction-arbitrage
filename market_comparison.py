@@ -14,6 +14,22 @@ STOP = {"will","the","a","an","at","on","of","in","to","by","before","after",
         "for","be","is","and","or","yes","no","does","that","this","market",
         "price","above","below"}
 TOKEN = re.compile(r"[a-z0-9]+")
+SPORT_TERMS = {"nba","nfl","nhl","mlb","wnba","soccer","football","basketball","hockey","baseball","tennis","match","game","win","winner","beat","defeat"}
+
+def candidate_words(market, *, kalshi=False):
+    """Use descriptive event fields; never use rule text to create a match."""
+    primary = market.get("title") if kalshi else market.get("question")
+    supplementary = market.get("subtitle") if kalshi else None
+    return tokenize(" ".join(str(v) for v in (primary,supplementary) if v))
+
+def candidate_score(left, right):
+    # Overlap coefficient helps discover alternate wordings, but remains unverified.
+    if not left or not right: return 0.0
+    intersect=len(left & right)
+    jaccard=intersect/len(left | right)
+    containment=intersect/min(len(left),len(right))
+    return max(jaccard,containment*0.80) if intersect >= 2 else jaccard
+
 def tokenize(text):
     return set(TOKEN.findall(str(text).lower())) - STOP
 
@@ -23,12 +39,12 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
     index=defaultdict(list)
     p_markets=polymarket["markets"]
     for ix, market in enumerate(p_markets):
-        for word in tokenize(market.get("question") or ""):
+        for word in candidate_words(market):
             index[word].append(ix)
     results=[]
     for market in kalshi["markets"]:
         title=market.get("title") or ""
-        words=tokenize(title)
+        words=candidate_words(market,kalshi=True)
         if not words:
             continue
         ids=set()
@@ -36,9 +52,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
             ids.update(index[word])
         for ix in ids:
             other=p_markets[ix]
-            other_words=tokenize(other.get("question") or "")
-            union=words | other_words
-            score=len(words & other_words)/len(union) if union else 0
+            other_words=candidate_words(other)
+            score=candidate_score(words,other_words)
             if score >= threshold:
                 results.append({
                     "kalshi_ticker":market.get("ticker"),
@@ -62,6 +77,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                         "Obtain synchronized executable orderbook depth and all fees"
                     ],
                     "title_similarity":round(score,3),
+                    "match_method":"title_subtitle_token_containment_research",
+                    "sports_candidate":bool((words | other_words) & SPORT_TERMS),
                     "market_rules_verified":False,
                     "price_comparison_verified":False,
                     "tradable":False,
