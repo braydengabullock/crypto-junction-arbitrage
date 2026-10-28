@@ -12,7 +12,7 @@ from fee_estimates import kalshi_general_taker_fee,polymarket_sports_taker_fee,p
 def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="100",opposing_tokens=None):
     result={"research_only":True,"trade_allowed":False,"fee_inputs_verified":False,
             "market_rules_verified":False,"net_profit_verified":False,
-            "status":"FEE_INPUTS_REQUIRED","rows":[]}
+            "status":"FEE_INPUTS_REQUIRED","rows":[],"near_misses":[]}
     if any(v is None for v in (poly_rate,kalshi_multiplier,extra_cost)):
         return result
     cap=positive(budget)
@@ -35,6 +35,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     pl=polymarket_buy_levels(po["book"])
                     if not kl or not pl: continue
                     best=None
+                    closest=None
                     for n in range(1,101):
                         kc=depth_cost(kl,n);pc=depth_cost(pl,n)
                         if not (kc["depth_sufficient"] and pc["depth_sufficient"]): break
@@ -46,10 +47,18 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+kfee+pfee+fixed
                         if total>cap: break
                         profit=Decimal(n)-total
+                        if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
+                            closest={"contracts_each":n,"total_cost_usd":str(total),
+                                     "hypothetical_net_usd":str(profit),
+                                     "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
                         if profit>0 and (best is None or profit>Decimal(best["hypothetical_net_usd"])):
                             best={"contracts_each":n,"total_cost_usd":str(total),
                                   "hypothetical_net_usd":str(profit),
                                   "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
+                    if closest:
+                        result["near_misses"].append({"kalshi_ticker":row.get("kalshi_ticker"),
+                            "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
+                            "scenario":closest,"candidate_only":True,"settlement_rules_verified":False})
                     if best:
                         result["rows"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                              "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
@@ -60,6 +69,8 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     continue
     result["rows"].sort(key=lambda r:Decimal(r["scenario"]["hypothetical_net_usd"]),reverse=True)
     result["candidate_scenarios"]=len(result["rows"])
+    result["near_misses"].sort(key=lambda x:Decimal(x["scenario"]["hypothetical_net_usd"]),reverse=True)
+    result["mapped_pairs_priced"]=len(result["near_misses"])
     return result
 
 if __name__=="__main__":
@@ -81,4 +92,5 @@ if __name__=="__main__":
     out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,opposing_tokens=mapping)
     Path(z.output).write_text(json.dumps(out,indent=2),encoding="utf-8")
     print(json.dumps({"status":out["status"],"candidate_scenarios":len(out["rows"]),
-                      "net_profit_verified":False}))
+                      "net_profit_verified":False,"mapped_pairs_priced":out.get("mapped_pairs_priced",0),
+                      "best_illustrative_net_usd":out["near_misses"][0]["scenario"]["hypothetical_net_usd"] if out["near_misses"] else None}))
