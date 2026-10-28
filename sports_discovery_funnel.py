@@ -47,7 +47,19 @@ def funnel(kalshi,polymarket,matches,mapping):
                                    "TOKEN_MAPPING" if tickers-mapped_tickers else
                                    "DOWNSTREAM_PRICE_AND_RULE_REVIEW")
         }
+    # Rank coverage losses rather than assuming a higher sampling limit helps.
+    priorities=[]
+    for league, stats in result.items():
+        for stage, field in (("IDENTIFIER_MATCHING","identifier_match_missing_sides"),
+                             ("TOKEN_MAPPING","identifier_matched_but_unmapped_sides")):
+            missing=stats[field]
+            if missing:
+                priorities.append({"league":league,"stage":stage,
+                                   "missing_sides":missing,
+                                   "note":"Research coverage only; not a verified executable opportunity"})
+    priorities.sort(key=lambda row:(-row["missing_sides"],row["league"],row["stage"]))
     return {
+        "research_priorities":priorities,
         "research_only":True,"verified_opportunities":0,
         "polymarket_markets_sampled":len(pmarkets),
         "polymarket_coverage_complete":polymarket.get("data_quality",{}).get("pagination",{}).get("complete"),
