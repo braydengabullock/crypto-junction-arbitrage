@@ -37,6 +37,15 @@ class HistoricalAuditTests(unittest.TestCase):
     def test_low_roi_blocks(self):
         p=sample();p["ask_b"]="0.60"
         self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_actual_loss_is_counted_when_entry_looked_profitable(self):
+        p=sample()
+        p["actual_payout_per_pair"]="0.50"
+        result=evaluate(p)
+        self.assertEqual(result["status"],"CONDITIONAL_PAPER_RESULT")
+        self.assertEqual(result["modeled_profit_usd"],"-45.00")
+        summary=audit([p])
+        self.assertEqual(summary["conditional_losses"],1)
+        self.assertEqual(summary["conditional_wins"],0)
     def test_budget(self):
         r=evaluate(sample(),budget="50")
         self.assertEqual(r["contracts_per_leg"],52)
