@@ -205,6 +205,20 @@ jobs:
               lines.append("Mapping counts are research-only; settlement rules, depth, fees and executable opportunities are not verified.")
           except (OSError, ValueError, TypeError) as exc:
               lines.append("Discovery bottleneck summary unavailable (" + type(exc).__name__ + ").")
+          try:
+              economics = json.loads(Path("opportunity_economics.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Pricing and quote quality by league (fixed-ten research)",
+                            "| League | Priced | Quote screen passed | Quote unverified | Raw spread nonpositive | Friction erased |",
+                            "|---|---:|---:|---:|---:|---:|"])
+              for league, row in economics.get("by_league", {}).items():
+                  lines.append("| " + str(league) + " | " + " | ".join(
+                      str(row.get(field, 0)) for field in (
+                          "pairs", "quality_screen_passed_pairs",
+                          "quality_screen_unverified_pairs",
+                          "nonpositive_raw_spread_pairs", "friction_erased_pairs")) + " |")
+              lines.append("Only priced fixed-ten observations are counted; missing/depth-limited quotes are not included. Quality screens do not verify execution or settlement.")
+          except (OSError, ValueError, TypeError) as exc:
+              lines.append("Pricing and quote quality summary unavailable (" + type(exc).__name__ + ").")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
