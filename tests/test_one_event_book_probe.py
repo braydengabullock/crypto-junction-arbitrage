@@ -9,6 +9,8 @@ class InspectionTests(unittest.TestCase):
         r=inspect(obj,fetch_k=lambda _ :{"orderbook_fp":{"yes_dollars":[["0.5","1"]],"no_dollars":[]}},
                   fetch_p=lambda _ :{"asks":[{"price":"0.6","size":"1"}]})
         self.assertEqual(len(r["book_probes"]),3)
+        self.assertEqual(r["book_probes"][0]["no_buy_best_ask"],"0.5")
+        self.assertEqual(r["book_probes"][1]["best_ask"],"0.6")
         self.assertFalse(r["rule_equivalence_verified"])
         self.assertFalse(r["tradable"])
     def test_missing_event_does_not_invent_contracts(self):
