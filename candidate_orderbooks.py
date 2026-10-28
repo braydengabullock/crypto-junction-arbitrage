@@ -83,11 +83,38 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         rows.append(row)
+    # Diagnostic only: mutually exclusive failures before any pricing evaluation.
+    for row in rows:
+        observations=row["observations"]
+        has_k=any(o.get("venue")=="kalshi" for o in observations)
+        has_p=any(o.get("venue")=="polymarket" for o in observations)
+        if any("Missing Kalshi ticker or Polymarket token IDs" in e for e in row["errors"]):
+            reason="MISSING_IDENTIFIERS"
+        elif not has_k and not has_p:
+            reason="BOTH_VENUE_BOOKS_MISSING"
+        elif not has_k:
+            reason="KALSHI_BOOK_MISSING"
+        elif not has_p:
+            reason="POLYMARKET_BOOK_MISSING"
+        elif row["errors"]:
+            reason="PARTIAL_TOKEN_FETCH_FAILURE"
+        else:
+            reason="BOOKS_COLLECTED_UNVERIFIED"
+        row["collection_diagnostic"]=reason
+    diagnostics=Counter(row["collection_diagnostic"] for row in rows)
+    diagnostics_by_league={}
+    for row in rows:
+        ticker=str(row.get("kalshi_ticker") or "")
+        league=ticker.split("GAME-",1)[0].removeprefix("KX") if "GAME-" in ticker else "OTHER"
+        diagnostics_by_league.setdefault(league,Counter())[row["collection_diagnostic"]]+=1
     sampled_event_ids={str(r.get("kalshi_ticker") or "").rsplit("-",1)[0] for r in rows}
     league_counts=Counter(str(r.get("kalshi_ticker") or "").split("GAME-",1)[0].removeprefix("KX") for r in rows)
     return {"research_only":True,"verified_opportunities":0,
             "candidate_count":len(candidates),"eligible_candidate_count":len(selected),"sampled_candidates":len(rows),
-            "captured_at":now(),"sampled_leagues":dict(sorted(league_counts.items())),"distinct_events_sampled":len(sampled_event_ids),"rows":rows,
+            "captured_at":now(),"collection_diagnostics":dict(sorted(diagnostics.items())),
+            "collection_diagnostics_by_league":{k:dict(sorted(v.items())) for k,v in sorted(diagnostics_by_league.items())},
+            "unsampled_eligible_candidates":len(selected)-len(rows),
+            "sampled_leagues":dict(sorted(league_counts.items())),"distinct_events_sampled":len(sampled_event_ids),"rows":rows,
             "warning":"Sequential public books, potentially unmatched outcomes. No claims of trade eligibility, executable fills or net profit."}
 
 def main():
