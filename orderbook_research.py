@@ -83,3 +83,19 @@ def research_capture(*,kalshi_ticker,polymarket_token_id,opener=urlopen):
       "kalshi_book":k,"polymarket_book":p,
       "warning":"Non-atomic sequential observations. Indicative book depth can vanish; fees, FX, settlement and eligibility unverified. No trade signal."
     }
+
+def main():
+    import argparse
+    from pathlib import Path
+    parser=argparse.ArgumentParser(description="Manual public orderbook capture; research only")
+    parser.add_argument("--kalshi-ticker",required=True)
+    parser.add_argument("--polymarket-token-id",required=True)
+    parser.add_argument("--output",default="local_orderbook_research.json")
+    args=parser.parse_args()
+    data=research_capture(kalshi_ticker=args.kalshi_ticker,
+                          polymarket_token_id=args.polymarket_token_id)
+    Path(args.output).write_text(json.dumps(data,indent=2),encoding="utf-8")
+    print(json.dumps({"research_only":True,"executable_pair_verified":False,
+                      "output":args.output,"note":"No trade opportunity validated."}))
+if __name__=="__main__":
+    main()
