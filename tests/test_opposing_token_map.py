@@ -12,6 +12,24 @@ class MapTests(unittest.TestCase):
   self.assertEqual(r["opposing_token_map"]["KXNBAGAME-26OCT28OKCDAL-OKC|YES"],"456")
   self.assertEqual(r["mapped_pairs"],2)
   self.assertFalse(r["market_rules_verified"])
+ def test_nhl_two_team_outcomes(self):
+  a=cand("TOR","Toronto wins")
+  b=cand("MTL","Montreal wins")
+  for item,code in ((a,"TOR"),(b,"MTL")):
+   item["kalshi_ticker"]="KXNHLGAME-26OCT28TORMTL-"+code
+   item["polymarket_slug"]="nhl-tor-mtl-2026-10-28"
+   item["polymarket_outcomes"]='["Maple Leafs","Canadiens"]'
+  result=make_mapping([a,b])
+  self.assertEqual(result["mapped_pairs"],2)
+  self.assertEqual(result["opposing_token_map"]["KXNHLGAME-26OCT28TORMTL-TOR|YES"],"456")
+  self.assertFalse(result["market_rules_verified"])
+ def test_nhl_unknown_outcome_rejected(self):
+  a=cand("TOR","Toronto wins")
+  b=cand("MTL","Montreal wins")
+  for item,code in ((a,"TOR"),(b,"MTL")):
+   item["kalshi_ticker"]="KXNHLGAME-26OCT28TORMTL-"+code
+   item["polymarket_outcomes"]='["Maple Leafs","Unknown"]'
+  self.assertEqual(make_mapping([a,b])["mapped_pairs"],0)
  def test_missing_label_blocks(self):
   a=cand("OKC","Unknown city wins")
   self.assertEqual(make_mapping([a,cand("DAL","Will Dallas win?")])["mapped_pairs"],0)
