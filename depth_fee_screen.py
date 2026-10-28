@@ -36,6 +36,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     if not kl or not pl: continue
                     best=None
                     closest=None
+                    fixed_ten=None
                     for n in range(1,101):
                         kc=depth_cost(kl,n);pc=depth_cost(pl,n)
                         if not (kc["depth_sufficient"] and pc["depth_sufficient"]): break
@@ -47,6 +48,9 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+kfee+pfee+fixed
                         if total>cap: break
                         profit=Decimal(n)-total
+                        if n==10:
+                            fixed_ten={"contracts_each":10,"total_cost_usd":str(total),
+                                       "hypothetical_net_usd":str(profit)}
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
                             closest={"contracts_each":n,"total_cost_usd":str(total),
                                      "hypothetical_net_usd":str(profit),
@@ -60,7 +64,8 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     if closest:
                         result["near_misses"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                             "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
-                            "scenario":closest,"candidate_only":True,"settlement_rules_verified":False})
+                            "scenario":closest,"fixed_ten_contract_pairs":fixed_ten,
+                            "candidate_only":True,"settlement_rules_verified":False})
                     if best:
                         result["rows"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                              "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
