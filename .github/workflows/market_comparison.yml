@@ -105,6 +105,8 @@ jobs:
         run: |
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python settlement_rule_review.py --mapping opposing_token_map.json --kalshi kalshi_sports_snapshot.json --polymarket "$P" --output settlement_rule_review.json
+      - name: Flag settlement rule wording differences for manual review
+        run: python settlement_rule_triage.py --input settlement_rule_review.json --output settlement_rule_triage.json
       - name: Audit public orderbook evidence quality
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
@@ -141,6 +143,7 @@ jobs:
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("watchlist_trends.json", ("comparable_pairs",)),
               ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
+              ("settlement_rule_triage.json", ("records_examined", "records_with_text_mention_differences", "verified_pairs")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -188,6 +191,7 @@ jobs:
             sustained_watchlist.json
             opposing_token_map.json
             settlement_rule_review.json
+            settlement_rule_triage.json
             orderbook_quality.json
             phase1_real_data_report.json
             preflight_report.json
