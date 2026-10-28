@@ -19,8 +19,8 @@ class PolymarketPublicTests(unittest.TestCase):
             params=parse_qs(urlsplit(req.full_url).query)
             self.assertEqual(params["active"],["true"])
             self.assertEqual(params["closed"],["false"])
-            self.assertEqual(params["order"],["volume24hr"])
-            self.assertEqual(params["ascending"],["false"])
+            self.assertIn(params["order"][0],("volume24hr","endDate"))
+            self.assertEqual(params["ascending"],["true"] if params["order"][0]=="endDate" else ["false"])
             self.assertEqual(timeout,20)
             return Response([{"id":"1","question":"Test","outcomePrices":json.dumps(["0.5","0.5"])}])
         markets,page=fetch_markets(limit=10,opener=opener)
@@ -28,6 +28,16 @@ class PolymarketPublicTests(unittest.TestCase):
         self.assertTrue(data["research_only"])
         self.assertFalse(data["data_quality"]["depth_verified"])
         self.assertTrue(page["complete"])
+    def test_mixed_sampling_deduplicates_across_sorts(self):
+        seen=[]
+        def opener(req,timeout):
+            params=parse_qs(urlsplit(req.full_url).query)
+            seen.append(params["order"][0])
+            return Response([{"id":"same","question":"Overlapping event"}])
+        markets,info=fetch_markets(limit=10,max_pages=2,opener=opener)
+        self.assertEqual(len(markets),1)
+        self.assertEqual(seen,["volume24hr","endDate"])
+        self.assertTrue(info["deduplicated"])
     def test_reject_bad_response(self):
         with self.assertRaises(ValueError):
             fetch_markets(opener=lambda req,timeout:Response({"markets":[]}))
