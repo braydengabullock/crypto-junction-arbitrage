@@ -27,7 +27,7 @@ def evaluate_research_case(case):
         result["issues"].extend(rules["reasons"])
         return result
     required = ("kalshi_book", "polymarket_book", "observed_kalshi",
-                "observed_polymarket", "fee_kalshi", "fee_polymarket",
+                "observed_polymarket", "fee_kalshi", "fee_polymarket", "other_cost_usd",
                 "kalshi_side", "polymarket_side",
                 "kalshi_ticker", "polymarket_token_id")
     missing = [key for key in required if case.get(key) is None or case.get(key) == ""]
@@ -47,6 +47,7 @@ def evaluate_research_case(case):
         observed_polymarket=case["observed_polymarket"],
         fee_kalshi=case["fee_kalshi"],
         fee_polymarket=case["fee_polymarket"],
+        other_cost_usd=case["other_cost_usd"],
         budget="100",
     )
     result["displayed_depth_review"] = prices
