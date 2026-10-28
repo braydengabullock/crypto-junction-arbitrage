@@ -52,7 +52,7 @@ jobs:
       - name: Sample candidate public order books (research only)
         run: python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Sample mapped game-winner orderbooks (bounded research)
-        run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 12 --output candidate_orderbooks.json
+        run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 20 --output candidate_orderbooks.json
       - name: Screen displayed depth with explicit fee input gate
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
       - name: Illustrative NBA fee-and-buffer sensitivity (mapped outcome candidates, not verified rules)
