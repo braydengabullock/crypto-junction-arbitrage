@@ -82,6 +82,9 @@ def snapshot(markets, pagination, *, now=None):
             "closed":m.get("closed"),"outcomes":m.get("outcomes"),
             "outcomePrices":m.get("outcomePrices"),
             "clobTokenIds":m.get("clobTokenIds"),
+            "enableOrderBook":m.get("enableOrderBook"),
+            "acceptingOrders":m.get("acceptingOrders"),
+            "restricted":m.get("restricted"),
             "liquidity":m.get("liquidity"),"volume":m.get("volume")
         } for m in markets]
     }
