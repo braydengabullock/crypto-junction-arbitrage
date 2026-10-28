@@ -41,6 +41,7 @@ def diagnose(data):
             "nonpositive_raw_spread_pairs":sum(Decimal(x["raw_displayed_spread_usd"])<=0 for x in group),
             "friction_erased_pairs":sum(Decimal(x["raw_displayed_spread_usd"])>0 and Decimal(x["illustrative_net_usd"])<=0 for x in group),
             "pairs":len(group),
+            "quote_quality_pass_rate_pct":round(100*quality_ok/len(group),1),
             "positive_raw_spread_pairs":sum(Decimal(x["raw_displayed_spread_usd"])>0 for x in group),
             "positive_illustrative_net_pairs":sum(Decimal(x["illustrative_net_usd"])>0 for x in group),
             "best_raw_spread_usd":str(max(Decimal(x["raw_displayed_spread_usd"]) for x in group)),
