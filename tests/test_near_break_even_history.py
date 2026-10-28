@@ -3,7 +3,7 @@ from near_break_even_history import update
 
 def row(net,streak=0):
     return {"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"T",
-            "fixed_ten_current_net_usd":net,"near_break_even_streak":streak}
+            "fixed_ten_current_net_usd":net,"near_break_even_streak":streak,"quote_quality_passed":True}
 
 class PersistenceTests(unittest.TestCase):
     def test_continues_close_streak(self):
