@@ -16,6 +16,20 @@ class DiscoveryFunnelTests(unittest.TestCase):
         self.assertEqual(r["by_league"]["NBA"]["identifier_matched_but_unmapped_sides"],1)
         self.assertFalse(r["matches_candidate_cap_reached"])
         self.assertEqual(r["verified_opportunities"],0)
+    def test_warning_reflects_actual_cap_and_incomplete_collection(self):
+        r=funnel({"markets":[]},{"markets":[],"data_quality":{"pagination":{"complete":False}}},
+                 {"candidate_limit":2,"candidates":[{},{}]},{"opposing_token_map":{}})
+        self.assertIn("cap of 2",r["warning"])
+        self.assertIn("collection is incomplete",r["warning"])
+        self.assertTrue(r["matches_candidate_cap_reached"])
+        self.assertFalse(r["verified_opportunities"])
+
+    def test_complete_uncapped_collection_does_not_warn_about_truncation(self):
+        r=funnel({"markets":[]},{"markets":[],"data_quality":{"pagination":{"complete":True}}},
+                 {"candidate_limit":500,"candidates":[]},{"opposing_token_map":{}})
+        self.assertNotIn("truncated",r["warning"])
+        self.assertNotIn("collection is incomplete",r["warning"])
+        self.assertFalse(r["matches_candidate_cap_reached"])
     def test_candidate_cap_detection_uses_configured_limit(self):
         r=funnel({"markets":[]},{"markets":[]},{"candidate_limit":1,"candidates":[{}]},
                  {"opposing_token_map":{}})
