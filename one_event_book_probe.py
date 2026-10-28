@@ -41,7 +41,8 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
             except (ValueError,HTTPError,URLError,TimeoutError) as e:
                 report["errors"].append({"venue":"kalshi","ticker":ticker,
                     "kind":type(e).__name__,"http_status":getattr(e,"code",None)})
-    for market in poly[:6]:
+    # Only compare the actual game-winner market; props such as first score are not complements.
+    for market in [m for m in poly if m.get("question") == "Thunder vs. Mavericks"][:1]:
         tokens=parse_tokens(market.get("clobTokenIds"))
         report["polymarket_contracts"].append({
             "id":market.get("id"),"question":market.get("question"),
@@ -62,8 +63,10 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
                     "kind":type(e).__name__,"http_status":getattr(e,"code",None)})
     if not (k and p):
         report["status"]="EVENT_DISCOVERY_INCOMPLETE"
-    elif not report["book_probes"]:
-        report["status"]="NO_PUBLIC_ORDERBOOKS_RETURNED"
+    elif any(err.get("venue")=="polymarket" and err.get("http_status")==403 for err in report["errors"]):
+        report["status"]="POLYMARKET_ORDERBOOK_ACCESS_DENIED_403"
+    elif not any(b.get("venue")=="polymarket" for b in report["book_probes"]):
+        report["status"]="NO_POLYMARKET_PUBLIC_ORDERBOOKS_RETURNED"
     else:
         report["status"]="BOOK_PROBE_ONLY_RULES_UNVERIFIED"
     report["warning"]="A returned book is not a verified cross-venue pair. No fee assumptions, paper ROI, or trading signal."
