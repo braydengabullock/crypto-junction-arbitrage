@@ -24,11 +24,13 @@ jobs:
         run: python one_event_pair_combinations.py
       - name: Capture Kalshi public market metadata
         run: python capture_kalshi.py --limit 100 --max-pages 10
+      - name: Capture targeted Kalshi sports series
+        run: python kalshi_sports_capture.py
       - name: Capture Polymarket public market metadata
         run: python polymarket_public.py --limit 100 --max-pages 10
       - name: Find titles requiring human resolution-rule review
         run: |
-          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          K="kalshi_sports_snapshot.json"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
       - name: Screen multi-market indicative outcome candidates (no executable quote)
@@ -41,7 +43,7 @@ jobs:
         run: python sports_event_leads.py
       - name: Diagnose discovery coverage and near-match examples
         run: |
-          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          K="kalshi_sports_snapshot.json"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python discovery_diagnostic.py --kalshi "$K" --polymarket "$P" --output discovery_diagnostic.json
       - name: Sample candidate public order books (research only)
@@ -50,7 +52,7 @@ jobs:
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
         run: |
-          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          K="kalshi_sports_snapshot.json"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python readiness_report.py --kalshi "$K" --polymarket "$P" --output readiness_report.json
       - name: Produce phase-one real-data test report
@@ -110,6 +112,7 @@ jobs:
           name: cross-exchange-research-${{ github.run_id }}
           path: |
             snapshots/*.json
+            kalshi_sports_snapshot.json
             research_matches.json
             sports_candidate_shortlist.json
             sports_event_leads.json
