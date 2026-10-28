@@ -219,6 +219,21 @@ jobs:
               lines.append("Only priced fixed-ten observations are counted; missing/depth-limited quotes are not included. Quality screens do not verify execution or settlement.")
           except (OSError, ValueError, TypeError) as exc:
               lines.append("Pricing and quote quality summary unavailable (" + type(exc).__name__ + ").")
+          try:
+              collection = json.loads(Path("candidate_orderbooks.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Pre-pricing book collection diagnostics",
+                            "- Eligible but unsampled candidates: " + str(collection.get("unsampled_eligible_candidates", "unknown")),
+                            "| League | Missing identifiers | Both books missing | Kalshi missing | Polymarket missing | Partial token failures | Books collected |",
+                            "|---|---:|---:|---:|---:|---:|---:|"])
+              fields = ("MISSING_IDENTIFIERS", "BOTH_VENUE_BOOKS_MISSING",
+                        "KALSHI_BOOK_MISSING", "POLYMARKET_BOOK_MISSING",
+                        "PARTIAL_TOKEN_FETCH_FAILURE", "BOOKS_COLLECTED_UNVERIFIED")
+              for league, counts in collection.get("collection_diagnostics_by_league", {}).items():
+                  lines.append("| " + str(league) + " | " +
+                               " | ".join(str(counts.get(field, 0)) for field in fields) + " |")
+              lines.append("Book collection does not establish adequate depth, synchronized quotes, fees or rule equivalence.")
+          except (OSError, ValueError, TypeError) as exc:
+              lines.append("Book collection diagnostics unavailable (" + type(exc).__name__ + ").")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
