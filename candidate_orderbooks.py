@@ -40,7 +40,19 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
         for league in sorted(buckets):
             if buckets[league]:
                 ordered.append(buckets[league].pop(0))
-    sampled=ordered[:max_pairs]
+    # Prefer distinct sporting events before another contract side consumes a slot.
+    seen_events=set()
+    unique_events=[]
+    repeated_sides=[]
+    for candidate in ordered:
+        ticker=str(candidate.get("kalshi_ticker") or "")
+        event=ticker.rsplit("-",1)[0] if "GAME-" in ticker and "-" in ticker else ticker
+        if event in seen_events:
+            repeated_sides.append(candidate)
+        else:
+            seen_events.add(event)
+            unique_events.append(candidate)
+    sampled=(unique_events+repeated_sides)[:max_pairs]
     for candidate in sampled:
         tokens=parse_tokens(candidate.get("polymarket_clob_token_ids"))
         ticker=candidate.get("kalshi_ticker")
@@ -71,10 +83,11 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         rows.append(row)
+    sampled_event_ids={str(r.get("kalshi_ticker") or "").rsplit("-",1)[0] for r in rows}
     league_counts=Counter(str(r.get("kalshi_ticker") or "").split("GAME-",1)[0].removeprefix("KX") for r in rows)
     return {"research_only":True,"verified_opportunities":0,
             "candidate_count":len(candidates),"eligible_candidate_count":len(selected),"sampled_candidates":len(rows),
-            "captured_at":now(),"sampled_leagues":dict(sorted(league_counts.items())),"rows":rows,
+            "captured_at":now(),"sampled_leagues":dict(sorted(league_counts.items())),"distinct_events_sampled":len(sampled_event_ids),"rows":rows,
             "warning":"Sequential public books, potentially unmatched outcomes. No claims of trade eligibility, executable fills or net profit."}
 
 def main():
@@ -96,6 +109,6 @@ def main():
     result=collect(data.get("candidates",[]),max_pairs=args.max_pairs,allowed_tickers=allowed)
     Path(args.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
     print(json.dumps({"sampled_candidates":result["sampled_candidates"],
-                      "verified_opportunities":0,"sampled_leagues":result["sampled_leagues"],"output":args.output}))
+                      "verified_opportunities":0,"sampled_leagues":result["sampled_leagues"],"distinct_events_sampled":result["distinct_events_sampled"],"output":args.output}))
 if __name__=="__main__":
     main()
