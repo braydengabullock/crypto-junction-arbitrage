@@ -74,6 +74,10 @@ if __name__=="__main__":
     z=a.parse_args()
     data=json.loads(Path(z.books).read_text(encoding="utf-8"))
     mapping=json.loads(Path(z.opposing_token_map).read_text(encoding="utf-8")) if z.opposing_token_map else None
+    if mapping is not None:
+        if mapping.get("mapping_method")!="exact_event_id_and_two_unambiguous_outcome_labels" or mapping.get("market_rules_verified") is not False:
+            raise ValueError("Unsupported or incorrectly certified outcome mapping")
+        mapping=mapping["opposing_token_map"]
     out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,opposing_tokens=mapping)
     Path(z.output).write_text(json.dumps(out,indent=2),encoding="utf-8")
     print(json.dumps({"status":out["status"],"candidate_scenarios":len(out["rows"]),
