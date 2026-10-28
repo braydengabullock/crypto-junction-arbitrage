@@ -65,8 +65,6 @@ def inspect(snapshot, *, opener=urlopen, sports_token=None):
         result["sports_token_probe"]=entry
         if result["requests"][0]["http_status"]==200 and entry["http_status"]==403:
             result["access_conclusion"]="CONTROL_ACCESSIBLE_SPORTS_TOKEN_REFUSED"
-    if not result["sports_probe_attempted"]:
-        result["access_conclusion"]="SPORTS_PROBE_NOT_ATTEMPTED"
     return result
 
 if __name__=="__main__":
