@@ -36,6 +36,13 @@ class ComparisonTests(unittest.TestCase):
         self.assertTrue(matches[0]["sports_candidate"])
         self.assertFalse(matches[0]["market_rules_verified"])
         self.assertFalse(matches[0]["tradable"])
+    def test_sports_matchup_alternate_wording_and_city_abbreviation(self):
+        k={"markets":[{"ticker":"K","title":"LA Lakers vs Boston Celtics"}]}
+        p={"markets":[{"id":"P","question":"Will Los Angeles Lakers defeat Boston Celtics?"}]}
+        matches,count=compare(k,p)
+        self.assertEqual(count,1)
+        self.assertIn("lakers",matches[0]["shared_event_terms"])
+        self.assertFalse(matches[0]["market_rules_verified"])
     def test_one_shared_team_name_is_not_enough(self):
         k={"markets":[{"ticker":"K","title":"Boston Celtics game"}]}
         p={"markets":[{"id":"P","question":"Boston Bruins Stanley Cup"}]}
