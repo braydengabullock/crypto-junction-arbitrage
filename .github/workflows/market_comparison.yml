@@ -279,12 +279,14 @@ jobs:
           try:
               three = json.loads(Path("league_three_run_quality.json").read_text(encoding="utf-8"))
               lines.extend(["", "### Three-run league quote quality (descriptive only)",
-                            "| League | Priced observations per run | Pass rates % | Minimum sample met | Strictly improving |",
-                            "|---|---|---|---|---|"])
+                            "| League | Priced observations per run | Pass rates % | Positive raw spreads by run | Positive in all 3 | Minimum sample met | Strictly improving |",
+                            "|---|---|---|---|---|---|---|"])
               for league, row in three.get("by_league", {}).items():
                   lines.append("| " + str(league) + " | " +
                                str(row.get("pairs_by_run", [])) + " | " +
                                str(row.get("pass_rates_pct_by_run", [])) + " | " +
+                               str(row.get("positive_raw_spread_pairs_by_run", [])) + " | " +
+                               str(row.get("positive_raw_spread_in_every_run", False)) + " | " +
                                str(row.get("minimum_samples_met", False)) + " | " +
                                str(row.get("three_run_improvement_observed", False)) + " |")
               lines.append("Trend observations do not verify trading eligibility, settlement rules, or executable prices.")
