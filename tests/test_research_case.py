@@ -17,7 +17,7 @@ def case():
         polymarket_book={"asks":[{"price":"0.50","size":"100"}]},
         observed_kalshi="2026-10-28T12:00:00Z",
         observed_polymarket="2026-10-28T12:00:01Z",
-        fee_kalshi="0.01", fee_polymarket="0.01",
+        fee_kalshi="0.01", fee_polymarket="0.01", other_cost_usd="0",
         kalshi_side="YES", polymarket_side="NO",
         kalshi_ticker="DEMO", polymarket_token_id="123")
 
