@@ -31,6 +31,7 @@ class EconomicsTests(unittest.TestCase):
         b["quote_quality"]={"within_20_seconds":False,"sufficient_depth_for_ten":True}
         r=diagnose({"near_misses":[a,b]})["by_league"]["NBA"]
         self.assertEqual(r["quality_screen_passed_pairs"],1)
+        self.assertEqual(r["quote_quality_pass_rate_pct"],50.0)
         self.assertEqual(r["quality_screen_unverified_pairs"],1)
         self.assertEqual(r["nonpositive_raw_spread_pairs"],1)
         self.assertEqual(r["friction_erased_pairs"],1)
