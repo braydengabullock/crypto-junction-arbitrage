@@ -30,6 +30,10 @@ def group_leads(shortlist, kalshi_snapshot, polymarket_snapshot):
             "event_identity_verified":False,"opposing_outcomes_verified":False,
             "status":"EVENT_IDENTITY_REVIEW_REQUIRED"} for (k,p),v in groups.items()]
     leads.sort(key=lambda x:(-len(x["kalshi_tickers"]),-x["candidate_rows"]))
+    for lead in leads:
+        lead["review_priority"]="MULTIPLE_KALSHI_OUTCOMES" if len(lead["kalshi_tickers"])>=2 else "SINGLE_CONTRACT_LEAD"
+        lead["ready_for_price_validation"]=False
+        lead["next_step"]="Verify exact two-team event, matching outcome tokens and resolution conditions before book pricing"
     return {"research_only":True,"event_groups":leads,"groups_found":len(leads),
             "skipped_missing_identifiers":skipped,"verified_pairs":0,
             "warning":"Different exchange identifiers are not proof of matching event, settlement or prices."}
