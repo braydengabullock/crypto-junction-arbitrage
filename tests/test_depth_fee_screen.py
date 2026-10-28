@@ -20,8 +20,8 @@ class DepthFeeTests(unittest.TestCase):
   self.assertTrue(with_fx["fx_cost_supplied"])
   self.assertFalse(no_fx["fx_cost_supplied"])
   self.assertEqual(Decimal(with_fx["fx_cost_assumed_usd"]),Decimal("0.20"))
-  self.assertEqual(Decimal(with_fx["near_misses"][0]["scenario"]["hypothetical_net_usd"]),
-                   Decimal(no_fx["near_misses"][0]["scenario"]["hypothetical_net_usd"])-Decimal("0.20"))
+  self.assertEqual(Decimal(with_fx["near_misses"][0]["fixed_ten_contract_pairs"]["hypothetical_net_usd"]),
+                   Decimal(no_fx["near_misses"][0]["fixed_ten_contract_pairs"]["hypothetical_net_usd"])-Decimal("0.20"))
   self.assertFalse(with_fx["net_profit_verified"])
  def test_fx_cost_must_be_nonnegative(self):
   with self.assertRaises(ValueError):
