@@ -73,6 +73,9 @@ jobs:
           if gh run download "$PREVIOUS" --name "cross-exchange-research-$PREVIOUS" --dir previous_research; then
             if [ -f previous_research/near_miss_watchlist.json ]; then
               python watchlist_trends.py --previous previous_research/near_miss_watchlist.json --current near_miss_watchlist.json --output watchlist_trends.json
+              if [ -f previous_research/watchlist_trends.json ]; then
+                python near_break_even_history.py --previous previous_research/watchlist_trends.json --current watchlist_trends.json --output watchlist_trends.json
+              fi
             else
               echo "Previous run has no watchlist artifact."
             fi
