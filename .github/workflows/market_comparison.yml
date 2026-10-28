@@ -294,6 +294,9 @@ jobs:
               lines.append("Three-run quote-quality results unavailable or history insufficient.")
           try:
               illustrated = json.loads(Path("depth_fee_illustrative.json").read_text(encoding="utf-8"))
+              lines.append("- FX cost: " + ("explicit estimate supplied" if illustrated.get("fx_cost_supplied") else "UNKNOWN / assumed $0 for illustration only"))
+              if not illustrated.get("fx_cost_supplied"):
+                  lines.append("**Cost completeness warning:** Positive modeled net ROI is not verified after currency conversion.")
               tiers = {"SMALL_POSITIVE":0, "HIGHER_PRIORITY_0_5_PLUS":0, "EXCEPTIONAL_2_PLUS":0}
               for candidate in illustrated.get("rows", []):
                   tier = candidate.get("scenario", {}).get("net_roi_tier")
