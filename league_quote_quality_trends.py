@@ -23,7 +23,9 @@ def compare(previous, current):
             "previous_passed":old_pass,"current_passed":new_pass,
             "previous_pass_rate_pct":old_rate,"current_pass_rate_pct":new_rate,
             "change_percentage_points":round(new_rate-old_rate,1) if old_rate is not None and new_rate is not None else None,
-            "status":"COMPARABLE_RESEARCH" if old_n and new_n else "INSUFFICIENT_SAMPLES"
+            "status":"COMPARABLE_RESEARCH" if old_n and new_n else "INSUFFICIENT_SAMPLES",
+            "sample_change_pct":round((new_n-old_n)/old_n*100,1) if old_n else None,
+            "interpretation":"DESCRIPTIVE_ONLY_NOT_STABLE_TREND"
         }
     return {"research_only":True,"trade_allowed":False,"verified_opportunities":0,
             "by_league":rows,
