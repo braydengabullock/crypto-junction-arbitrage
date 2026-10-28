@@ -11,6 +11,17 @@ class TrendTests(unittest.TestCase):
   self.assertEqual(r["trend_counts"]["IMPROVING"],1)
   self.assertEqual(r["trend_counts"]["WORSENING"],0)
   self.assertEqual(compare({},make("-0.2"))["changes"][0]["trend"],"NEW")
+ def test_fixed_ten_benchmark_survives_size_change(self):
+  def row(n,net,fixed):
+   return {"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12",
+           "illustrative_net_usd":net,"contracts_each":n,
+           "fixed_ten_contract_pairs":{"contracts_each":10,"hypothetical_net_usd":fixed}}
+  result=compare({"watchlist":[row(30,"-1.0","-0.5")]},
+                 {"watchlist":[row(25,"-0.8","-0.3")]})
+  change=result["changes"][0]
+  self.assertEqual(change["trend"],"SIZE_CHANGED_NOT_COMPARABLE")
+  self.assertEqual(change["fixed_ten_trend"],"IMPROVING")
+  self.assertEqual(change["fixed_ten_change_usd"],"0.2")
  def test_changed_quantity_not_claimed_as_price_trend(self):
   old={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-1","contracts_each":10}]}
   new={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-0.5","contracts_each":5}]}
