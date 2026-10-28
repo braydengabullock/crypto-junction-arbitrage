@@ -41,7 +41,7 @@ def group_leads(shortlist, kalshi_snapshot, polymarket_snapshot):
 if __name__=="__main__":
     import glob
     def load(path): return json.loads(Path(path).read_text(encoding="utf-8"))
-    k=sorted(glob.glob("snapshots/kalshi_*.json"))[-1]
+    k="kalshi_sports_snapshot.json"
     p=sorted(glob.glob("snapshots/polymarket_*.json"))[-1]
     out=group_leads(load("sports_candidate_shortlist.json"),load(k),load(p))
     Path("sports_event_leads.json").write_text(json.dumps(out,indent=2),encoding="utf-8")
