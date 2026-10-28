@@ -6,7 +6,9 @@ def payload():
        "rows":[{"executable_opportunity_verified":False}]}
     q={"research_only":True,"rows_examined":1,
        "rows_with_synchronized_observations":1,
-       "rows_with_displayed_depth_on_both_venues":1}
+       "rows_with_displayed_depth_on_both_venues":1,
+       "details":[{"both_books":True,"synchronized":True,
+                   "displayed_depth_on_both":True,"issues":[]}]}
     r={"research_only":True,"verified_trade_opportunities":0,
        "actual_profit_usd":None}
     return m,b,q,r
@@ -15,6 +17,15 @@ class PreflightTests(unittest.TestCase):
         r=assess(*payload())
         self.assertTrue(r["observation_usable"])
         self.assertFalse(r["data_sufficient_for_paper_backtest"])
+    def test_aggregate_counts_from_different_rows_are_not_usable(self):
+        m,b,q,r=payload()
+        b["rows"]=[{"executable_opportunity_verified":False} for _ in range(2)]
+        q["rows_examined"]=2
+        q["details"]=[{"both_books":True,"synchronized":True,
+                       "displayed_depth_on_both":False,"issues":[]},
+                      {"both_books":True,"synchronized":False,
+                       "displayed_depth_on_both":True,"issues":[]}]
+        self.assertFalse(assess(m,b,q,r)["observation_usable"])
     def test_missing_data_detected(self):
         m,b,q,r=payload(); q["rows_with_synchronized_observations"]=0
         self.assertFalse(assess(m,b,q,r)["observation_usable"])
