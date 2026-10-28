@@ -25,6 +25,11 @@ jobs:
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Summarize evidence readiness
+        run: |
+          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python readiness_report.py --kalshi "$K" --polymarket "$P" --output readiness_report.json
       - name: Preserve research evidence
         uses: actions/upload-artifact@v4
         with:
@@ -32,5 +37,6 @@ jobs:
           path: |
             snapshots/*.json
             research_matches.json
+            readiness_report.json
           retention-days: 14
           if-no-files-found: error
