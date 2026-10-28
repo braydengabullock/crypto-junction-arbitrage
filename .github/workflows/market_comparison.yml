@@ -7,6 +7,7 @@ on:
     - cron: "23 */4 * * *"
 permissions:
   contents: read
+  actions: read
 jobs:
   comparison:
     runs-on: ubuntu-latest
@@ -58,6 +59,26 @@ jobs:
         run: python depth_fee_screen.py --books candidate_orderbooks.json --opposing-token-map opposing_token_map.json --poly-rate 0.05 --kalshi-multiplier 1 --extra-cost 0.25 --output depth_fee_illustrative.json
       - name: Rank closest fee-adjusted research watchlist
         run: python near_miss_watchlist.py --input depth_fee_illustrative.json --output near_miss_watchlist.json
+      - name: Compare with most recent successful watchlist (read only)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PREVIOUS="$(gh run list --workflow market_comparison.yml --status success --limit 5 --json databaseId --jq '.[0].databaseId')"
+          if [ -z "$PREVIOUS" ] || [ "$PREVIOUS" = "${{ github.run_id }}" ]; then
+            echo "No earlier successful research run; trend comparison skipped."
+            exit 0
+          fi
+          mkdir -p previous_research
+          if gh run download "$PREVIOUS" --name "cross-exchange-research-$PREVIOUS" --dir previous_research; then
+            if [ -f previous_research/near_miss_watchlist.json ]; then
+              python watchlist_trends.py --previous previous_research/near_miss_watchlist.json --current near_miss_watchlist.json --output watchlist_trends.json
+            else
+              echo "Previous run has no watchlist artifact."
+            fi
+          else
+            echo "Previous artifact unavailable; skipping trends."
+          fi
       - name: Audit public orderbook evidence quality
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
@@ -92,6 +113,7 @@ jobs:
               ("clob_access_diagnostic.json", ("access_conclusion", "requests")),
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
+              ("watchlist_trends.json", ("comparable_pairs",)),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -135,6 +157,7 @@ jobs:
             depth_fee_screen.json
             depth_fee_illustrative.json
             near_miss_watchlist.json
+            watchlist_trends.json
             opposing_token_map.json
             orderbook_quality.json
             phase1_real_data_report.json
