@@ -8,6 +8,7 @@ import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.error import HTTPError
 from orderbook_research import fetch_kalshi_book, fetch_polymarket_book
 
 def now():
@@ -50,6 +51,9 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
                 completed=now()
                 row["observations"].append({"venue":"polymarket","token_id":token,
                                              "request_started_at":started,"observed_at":completed,"book":book})
+            except HTTPError as exc:
+                category = {400:"INVALID_TOKEN",404:"NO_ORDERBOOK",429:"RATE_LIMITED"}.get(exc.code,"HTTP_ERROR")
+                row["errors"].append("Polymarket "+category+" HTTP "+str(exc.code))
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         rows.append(row)
