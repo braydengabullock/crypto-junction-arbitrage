@@ -4,7 +4,7 @@ No event identity, price, or arb claim is inferred from text similarity.
 """
 import json
 from pathlib import Path
-from market_comparison import tokenize, SPORT_TERMS
+from market_comparison import tokenize, SPORT_TERMS, eligible_for_simple_match
 
 def shortlist(matches, *, limit=25):
     if limit<1: raise ValueError("Positive cap required")
@@ -13,6 +13,8 @@ def shortlist(matches, *, limit=25):
     seen=set()
     for m in sorted(candidates,key=lambda x:x.get("title_similarity",0),reverse=True):
         if not m.get("sports_candidate"): continue
+        if not eligible_for_simple_match({"ticker":m.get("kalshi_ticker"),"title":m.get("kalshi_title")},kalshi=True): continue
+        if not eligible_for_simple_match({"question":m.get("polymarket_question")}): continue
         title=" ".join((str(m.get("kalshi_title") or ""),str(m.get("polymarket_question") or "")))
         if not (tokenize(title) & SPORT_TERMS): continue
         key=(str(m.get("kalshi_ticker")),str(m.get("polymarket_id")))
@@ -26,7 +28,8 @@ def shortlist(matches, *, limit=25):
           "polymarket_token_ids":m.get("polymarket_clob_token_ids"),
           "rules_verified":False,"opposing_outcomes_verified":False,
           "executable_prices_verified":False,"net_roi_verified":False,
-          "status":"TITLE_CANDIDATE_ONLY"})
+          "status":"TITLE_CANDIDATE_ONLY",
+          "next_review":"Check Kalshi event ticker and Polymarket event slug, team identities, date and winner market type before quote requests"})
         if len(result)>=limit: break
     return {"research_only":True,"source":"sports_title_candidate_shortlist",
             "sports_candidates_returned":len(result),
