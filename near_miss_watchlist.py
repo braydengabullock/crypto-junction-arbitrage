@@ -21,6 +21,7 @@ def rank(report, limit=10):
                      "polymarket_token_id":item.get("polymarket_token_id"),
                      "kalshi_side":item.get("kalshi_side"),
                      "contracts_each":quantity,"combined_cost_usd":str(cost),
+                     "illustrative_net_per_contract_pair_usd":str(gain/quantity),
                      "illustrative_net_usd":str(gain),
                      "cost_reduction_for_one_cent_profit_usd":str(gap),
                      "monitor_only":True,"rules_verified":False})
