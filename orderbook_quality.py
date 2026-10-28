@@ -34,16 +34,21 @@ def summarize(payload, *, maximum_lag_seconds=20):
         if both:
             report["rows_with_kalshi_and_polymarket_books"]+=1
             try:
-                times=[stamp(kalshi[0]["observed_at"])]+[stamp(x["observed_at"]) for x in poly]
-                synced=(max(times)-min(times)).total_seconds() <= maximum_lag_seconds
+                records=[kalshi[0]]+poly
+                starts=[stamp(x["request_started_at"]) for x in records]
+                ends=[stamp(x["observed_at"]) for x in records]
+                synced=(max(ends)-min(starts)).total_seconds() <= maximum_lag_seconds
+                if any(end < start for start,end in zip(starts,ends)):
+                    synced=False
+                    issue.append("Invalid request start/end ordering")
                 # Kalshi YES or NO side may be relevant, but side cannot be
                 # selected until equivalence is independently established.
                 kbook=kalshi[0]["book"]
                 kdepth=bool(kalshi_buy_levels(kbook,"YES") or kalshi_buy_levels(kbook,"NO"))
                 pdepth=any(bool(polymarket_buy_levels(x["book"])) for x in poly)
                 has_depth=kdepth and pdepth
-            except (ValueError,KeyError,TypeError) as exc:
-                issue.append("Invalid orderbook structure or timestamp")
+            except (ValueError,KeyError,TypeError):
+                issue.append("Missing/invalid request interval or orderbook structure")
         if synced: report["rows_with_synchronized_observations"]+=1
         if has_depth: report["rows_with_displayed_depth_on_both_venues"]+=1
         report["details"].append({"kalshi_ticker":row.get("kalshi_ticker"),
@@ -52,7 +57,7 @@ def summarize(payload, *, maximum_lag_seconds=20):
                                   "displayed_depth_on_both":has_depth,
                                   "issues":issue,
                                   "rule_equivalence_verified":False})
-    report["warning"]="These metrics describe data quality only; neither matched outcomes nor executable fills, fees, capital reuse, eligibility, or profit are verified."
+    report["warning"]="Synchronization uses full request intervals, not just response times. These metrics describe data quality only; neither matched outcomes nor executable fills, fees, capital reuse, eligibility, or profit are verified."
     return report
 
 def main():
