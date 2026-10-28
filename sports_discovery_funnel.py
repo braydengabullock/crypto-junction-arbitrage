@@ -24,9 +24,11 @@ def funnel(kalshi,polymarket,matches,mapping):
         k=[m for m in markets if league_for(m.get("ticker"))==league]
         c=[m for m in candidates if league_for(m.get("kalshi_ticker"))==league
            and m.get("match_method")=="sports_identifier_date_teams_research"]
-        tickers={str(m.get("kalshi_ticker")) for m in c}
-        mapped_tickers={key.rsplit("|",1)[0] for key in mapped if
-                        key.endswith("|YES") and league_for(key.rsplit("|",1)[0])==league} & tickers
+        discovered={str(m.get("ticker")) for m in k if m.get("ticker")}
+        tickers={str(m.get("kalshi_ticker")) for m in c if m.get("kalshi_ticker")} & discovered
+        mapped_tickers={key.rsplit("|",1)[0] for key,value in mapped.items() if
+                        key.endswith("|YES") and isinstance(value,str) and value.strip()
+                        and league_for(key.rsplit("|",1)[0])==league} & tickers
         result[league]={
             "kalshi_contract_sides_discovered":len(k),
             "kalshi_distinct_events_discovered":len({event_for(m.get("ticker")) for m in k}),
@@ -37,7 +39,13 @@ def funnel(kalshi,polymarket,matches,mapping):
             "identifier_matched_but_unmapped_sides":len(tickers-mapped_tickers),
             "identifier_matched_but_unmapped_events":len({event_for(t) for t in tickers-mapped_tickers}),
             "mapping_coverage_pct_of_matched_sides":round(100*len(mapped_tickers)/len(tickers),1) if tickers else None,
-            "identifier_match_missing_sides":len({str(m.get("ticker")) for m in k}-tickers)
+            "identifier_match_missing_sides":len(discovered-tickers),
+            "identifier_match_missing_events":len({event_for(t) for t in discovered-tickers}),
+            "identifier_coverage_pct_of_discovered_sides":round(100*len(tickers)/len(discovered),1) if discovered else None,
+            "discovery_bottleneck":("NO_DISCOVERED_CONTRACTS" if not discovered else
+                                   "IDENTIFIER_MATCHING" if not tickers else
+                                   "TOKEN_MAPPING" if tickers-mapped_tickers else
+                                   "DOWNSTREAM_PRICE_AND_RULE_REVIEW")
         }
     return {
         "research_only":True,"verified_opportunities":0,
