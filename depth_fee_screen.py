@@ -51,6 +51,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     pl=polymarket_buy_levels(po["book"])
                     if not kl or not pl: continue
                     best=None
+                    best_roi=None
                     closest=None
                     fixed_ten=None
                     quote_quality={"both_books_present":True,"max_observation_span_seconds":None,"within_20_seconds":False,"sufficient_depth_for_ten":False}
@@ -94,6 +95,11 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                                        "assumed_extra_cost_usd":str(fixed),
                                        "modeled_total_friction_usd":str(kfee+pfee+fixed+fx),
                                        "assumed_fx_cost_usd":str(fx)}
+                        if profit>0 and (best_roi is None or profit/total>Decimal(best_roi["hypothetical_net_usd"])/Decimal(best_roi["total_cost_usd"])):
+                            best_roi={"contracts_each":n,"total_cost_usd":str(total),
+                                      "hypothetical_net_usd":str(profit),
+                                      "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001"))),
+                                      "net_roi_tier":roi_tier(profit,total),"venue_allocation":allocation}
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
                             closest={"contracts_each":n,"total_cost_usd":str(total),
                                      "hypothetical_net_usd":str(profit),
@@ -115,7 +121,11 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                     if best:
                         result["rows"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                              "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
-                             "scenario":best,"opposite_outcome_verified":False,
+                             "scenario":best,"max_roi_scenario":best_roi,
+                             "sizing_comparison":{"different_optimal_quantities":best["contracts_each"]!=best_roi["contracts_each"],
+                                  "max_profit_contracts_each":best["contracts_each"],
+                                  "max_roi_contracts_each":best_roi["contracts_each"]},
+                             "opposite_outcome_verified":False,
                              "opposite_outcome_mapping_supplied":True,
                              "candidate_only":True})
                 except (ValueError,KeyError,TypeError,ArithmeticError):
