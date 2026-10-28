@@ -77,6 +77,9 @@ jobs:
           fi
           mkdir -p previous_research
           if gh run download "$PREVIOUS" --name "cross-exchange-research-$PREVIOUS" --dir previous_research; then
+            if [ -f previous_research/opportunity_economics.json ] && [ -f opportunity_economics.json ]; then
+              python league_quote_quality_trends.py --previous previous_research/opportunity_economics.json --current opportunity_economics.json --output league_quote_quality_trends.json
+            fi
             if [ -f previous_research/near_miss_watchlist.json ]; then
               python watchlist_trends.py --previous previous_research/near_miss_watchlist.json --current near_miss_watchlist.json --output watchlist_trends.json
               if [ -f previous_research/watchlist_trends.json ]; then
@@ -237,6 +240,21 @@ jobs:
               lines.append("Book collection does not establish adequate depth, synchronized quotes, fees or rule equivalence.")
           except (OSError, ValueError, TypeError) as exc:
               lines.append("Book collection diagnostics unavailable (" + type(exc).__name__ + ").")
+          try:
+              trend = json.loads(Path("league_quote_quality_trends.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Quote quality changes versus previous successful research snapshot",
+                            "| League | Earlier sample | Current sample | Earlier pass % | Current pass % | Change (pp) |",
+                            "|---|---:|---:|---:|---:|---:|"])
+              for league, row in trend.get("by_league", {}).items():
+                  def display(value):
+                      return "n/a" if value is None else str(value)
+                  lines.append("| " + str(league) + " | " +
+                               " | ".join(display(row.get(field)) for field in (
+                                   "previous_pairs", "current_pairs", "previous_pass_rate_pct",
+                                   "current_pass_rate_pct", "change_percentage_points")) + " |")
+              lines.append("Two snapshots are insufficient to establish a consistent trend or profitable opportunities.")
+          except (OSError, ValueError, TypeError):
+              lines.append("Quote quality trend comparison unavailable; no improvement inferred.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
@@ -262,6 +280,7 @@ jobs:
             depth_fee_screen.json
             depth_fee_illustrative.json
             opportunity_economics.json
+            league_quote_quality_trends.json
             near_miss_watchlist.json
             watchlist_trends.json
             sustained_watchlist.json
