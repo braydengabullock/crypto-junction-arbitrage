@@ -17,9 +17,10 @@ def update(previous,current):
             close=v.is_finite() and Decimal("-0.25")<=v<0
         except (InvalidOperation,TypeError):
             close=False
-        row["near_break_even_streak"]=prior+1 if close else 0
+        row["near_break_even_streak"]=prior+1 if close and row.get("quote_quality_passed") is True else 0
     current["research_shortlist"]=sorted((r for r in current.get("changes",[]) if r.get("fixed_ten_current_net_usd") is not None and r.get("distance_to_break_even_fixed_ten_usd") is not None),
-        key=lambda r:(-int(r.get("near_break_even_streak",0)),
+        key=lambda r:(r.get("quote_quality_passed") is not True,
+                      -int(r.get("near_break_even_streak",0)),
                       max(0,-Decimal(str(r["fixed_ten_current_net_usd"])))))[:5]
     current["shortlist_evidence_status"]="DEPTH_AND_QUOTE_QUALITY_NOT_YET_LINKED_TO_PAIR; RESEARCH_ONLY"
     current["persistent_near_break_even_pairs"]=sum(r.get("near_break_even_streak",0)>=2 for r in current.get("changes",[]))
