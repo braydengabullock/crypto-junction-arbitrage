@@ -30,6 +30,9 @@ def build(mapping):
             "status":"UNVERIFIED_RULES","rule_equivalence_verified":False,
             "review_required":list(CHECKS),
             "kalshi_rule_source_url":None,"polymarket_rule_source_url":None,
+            "kalshi_source_lookup":"Kalshi public market detail: rules_primary and rules_secondary for this ticker",
+            "polymarket_source_lookup":"Polymarket Gamma market metadata: description and resolutionSource, resolved by token ID to market ID",
+            "source_fields_collected":False,
             "kalshi_rule_text":None,"polymarket_rule_text":None,
             "reviewer":None,"reviewed_at":None,
             "notes":"Matching event identifiers and team labels do not establish equivalent settlement terms."
