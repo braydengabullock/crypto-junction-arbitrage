@@ -13,24 +13,52 @@ from urllib.request import Request, urlopen
 BASE = "https://gamma-api.polymarket.com/markets"
 
 def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
-    if not 1 <= limit <= 500 or not 1 <= max_pages <= 20:
+    """Sample both active trading and upcoming resolution windows.
+
+    The two sorted samples may overlap. Deduplicate by market ID so our
+    coverage count is honest; this is still not exhaustive discovery.
+    """
+    if not 1 <= limit <= 100 or not 1 <= max_pages <= 20:
         raise ValueError("Invalid pagination limit")
-    markets = []
-    for page in range(max_pages):
-        query = urlencode({"active":"true","closed":"false",
-                           "limit":limit,"offset":page*limit,
-                           "order":"volume24hr","ascending":"false"})
-        request = Request(BASE + "?" + query,
-                          headers={"Accept":"application/json",
-                                   "User-Agent":"CJ-Arbitrage-Research/0.1"})
-        with opener(request,timeout=20) as response:
-            records = json.load(response)
-        if not isinstance(records,list):
-            raise ValueError("Unexpected Polymarket market response")
-        markets.extend(records)
-        if len(records) < limit:
-            return markets, {"complete":True,"pages_fetched":page+1,"sort":"volume24hr_desc"
-    return markets, {"complete":False,"pages_fetched":max_pages,"sort":"volume24hr_desc"
+    markets, seen = [], set()
+    plans = [("volume24hr", False, (max_pages + 1)//2),
+             ("endDate", True, max_pages//2)]
+    details = []
+    all_complete = True
+    for order, ascending, pages in plans:
+        complete = False
+        visited = 0
+        for page in range(pages):
+            query = urlencode({"active":"true","closed":"false",
+                               "limit":limit,"offset":page*limit,
+                               "order":order,
+                               "ascending":str(ascending).lower()})
+            request = Request(BASE + "?" + query,
+                              headers={"Accept":"application/json",
+                                       "User-Agent":"CJ-Arbitrage-Research/0.1"})
+            with opener(request, timeout=20) as response:
+                records = json.load(response)
+            if not isinstance(records,list):
+                raise ValueError("Unexpected Polymarket market response")
+            visited += 1
+            for record in records:
+                ident = record.get("id")
+                if ident is not None and str(ident) in seen:
+                    continue
+                if ident is not None:
+                    seen.add(str(ident))
+                markets.append(record)
+            if len(records) < limit:
+                complete = True
+                break
+        if pages:
+            all_complete = all_complete and complete
+        details.append({"order":order,"ascending":ascending,
+                        "pages_fetched":visited,"complete":complete})
+    return markets, {"complete":all_complete,
+                     "pages_fetched":sum(x["pages_fetched"] for x in details),
+                     "sorts":details,"deduplicated":True,
+                     "coverage":"mixed active-volume and earliest-end-date samples"}
 
 def snapshot(markets, pagination, *, now=None):
     return {
