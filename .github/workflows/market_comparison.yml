@@ -18,6 +18,8 @@ jobs:
           python-version: '3.11'
       - name: Probe one shared NBA event (read only)
         run: python one_event_discovery.py
+      - name: Probe event contract books (read only)
+        run: python one_event_book_probe.py
       - name: Capture Kalshi public market metadata
         run: python capture_kalshi.py --limit 100 --max-pages 10
       - name: Capture Polymarket public market metadata
@@ -60,6 +62,7 @@ jobs:
                 "paired_books_collected", "timestamp_aligned_candidates",
                 "displayed_depth_on_both_venues", "api_errors")),
               ("preflight_report.json", ("observation_usable", "issues")),
+              ("one_event_book_probe.json", ("status", "rule_equivalence_verified")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -91,5 +94,6 @@ jobs:
             phase1_real_data_report.json
             preflight_report.json
             one_event_discovery.json
+            one_event_book_probe.json
           retention-days: 14
           if-no-files-found: warn
