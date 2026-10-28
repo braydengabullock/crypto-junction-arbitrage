@@ -19,6 +19,16 @@ ALIASES = {"ny":"new york","la":"los angeles","sf":"san francisco",
            "nyc":"new york city","utd":"united"}
 SPORT_TERMS = {"nba","nfl","nhl","mlb","wnba","soccer","football","basketball","hockey","baseball","tennis","match","game","win","winner","beat","defeat"}
 
+SPORT_TICKER_PREFIXES = ("KXNBAGAME", "KXNFLGAME", "KXNHLGAME", "KXMLBGAME", "KXWNBAGAME")
+SPORT_SLUG_PREFIXES = ("nba-", "nfl-", "nhl-", "mlb-", "wnba-")
+
+def is_sports_candidate(kalshi_market, poly_market, words):
+    ticker=str(kalshi_market.get("ticker") or "").upper()
+    slug=str(poly_market.get("slug") or "").lower()
+    return bool((words & SPORT_TERMS) or
+                (ticker.startswith(SPORT_TICKER_PREFIXES) and
+                 slug.startswith(SPORT_SLUG_PREFIXES)))
+
 def candidate_words(market, *, kalshi=False):
     """Use descriptive event fields; never use rule text to create a match."""
     primary = market.get("title") if kalshi else market.get("question")
@@ -103,7 +113,7 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                     ],
                     "title_similarity":round(score,3),
                     "match_method":"title_subtitle_token_containment_research",
-                    "sports_candidate":bool((words | other_words) & SPORT_TERMS),
+                    "sports_candidate":is_sports_candidate(market,other,words | other_words),
                     "shared_event_terms":sorted(words & other_words),
                     "kalshi_subtitle":market.get("subtitle"),
                     "market_rules_verified":False,
