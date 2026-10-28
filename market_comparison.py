@@ -37,7 +37,7 @@ def sports_identifier_match(kalshi_market, poly_market):
     """Conservative date/league/team-code match, not payout or rule equivalence."""
     ticker=str(kalshi_market.get("ticker") or "").upper()
     slug=str(poly_market.get("slug") or "").lower()
-    m=re.fullmatch(r"KX(NBA|NFL|NHL|MLB|WNBA)GAME-(\\d{2})([A-Z]{3})(\\d{2})([A-Z]{6})-([A-Z]{3})",ticker)
+    m=re.fullmatch(r"KX(NBA|NFL|NHL|MLB|WNBA)GAME-(\d{2})([A-Z]{3})(\d{2})([A-Z]{6})-([A-Z]{3})",ticker)
     if not m: return False
     league,yy,mon,day,teams,winner=m.groups()
     if mon not in MONTHS: return False
@@ -81,7 +81,7 @@ def candidate_score(left, right):
 
 def tokenize(text):
     raw = str(text).lower()
-    raw = re.sub(r"\\b(" + "|".join(re.escape(k) for k in ALIASES) + r")\\b",
+    raw = re.sub(r"\b(" + "|".join(re.escape(k) for k in ALIASES) + r")\b",
                  lambda match: ALIASES[match.group(0)], raw)
     return set(TOKEN.findall(raw)) - STOP
 
@@ -100,8 +100,6 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
         if not eligible_for_simple_match(market,kalshi=True): continue
         title=market.get("title") or ""
         words=candidate_words(market,kalshi=True)
-        if not words:
-            continue
         ids=set()
         for word in words:
             ids.update(index[word])
