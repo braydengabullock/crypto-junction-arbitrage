@@ -22,6 +22,7 @@ class TrendTests(unittest.TestCase):
   self.assertEqual(change["trend"],"SIZE_CHANGED_NOT_COMPARABLE")
   self.assertEqual(change["fixed_ten_trend"],"IMPROVING")
   self.assertEqual(change["fixed_ten_change_usd"],"0.2")
+  self.assertEqual(result["fixed_ten_trend_counts"]["IMPROVING"],1)
  def test_changed_quantity_not_claimed_as_price_trend(self):
   old={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-1","contracts_each":10}]}
   new={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-0.5","contracts_each":5}]}
