@@ -29,7 +29,8 @@ def compare(previous,current):
         priority=("APPROACHING_BREAK_EVEN" if benchmark_comparable and new_fixed>old_fixed and new_fixed<0 and new_fixed>=Decimal("-0.25") else
                   "POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION" if new_fixed is not None and new_fixed>0 else
                   "MONITOR_ONLY")
-        changes.append({"monitoring_priority":priority,"kalshi_ticker":key[0],"kalshi_side":key[1],
+        changes.append({"monitoring_priority":priority,
+            "distance_to_break_even_fixed_ten_usd":str(-new_fixed) if new_fixed is not None and new_fixed<0 else "0" if new_fixed is not None else None,"kalshi_ticker":key[0],"kalshi_side":key[1],
             "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
             "current_net_usd":str(new_profit),
             "previous_contracts_each":old_qty,"current_contracts_each":new_qty,
@@ -44,7 +45,10 @@ def compare(previous,current):
     counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW","SIZE_CHANGED_NOT_COMPARABLE")}
     priority_counts={name:sum(x["monitoring_priority"]==name for x in changes) for name in ("APPROACHING_BREAK_EVEN","POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION","MONITOR_ONLY")}
     benchmark_counts={name:sum(x["fixed_ten_trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","UNAVAILABLE")}
+    ranked=sorted(changes,key=lambda x:(x["distance_to_break_even_fixed_ten_usd"] is None,
+        Decimal(x["distance_to_break_even_fixed_ten_usd"]) if x["distance_to_break_even_fixed_ten_usd"] is not None else Decimal("999999")))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
+            "closest_fixed_ten_pairs":ranked[:5],
             "fixed_ten_trend_counts":benchmark_counts,
             "monitoring_priority_counts":priority_counts,
             "trend_counts":counts,
