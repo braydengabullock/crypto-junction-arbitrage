@@ -19,8 +19,8 @@ class PolymarketPublicTests(unittest.TestCase):
             params=parse_qs(urlsplit(req.full_url).query)
             self.assertEqual(params["active"],["true"])
             self.assertEqual(params["closed"],["false"])
-            self.assertIn(params["order"][0],("volume_24hr","end_date"))
-            self.assertEqual(params["ascending"],["true"] if params["order"][0]=="end_date" else ["false"])
+            self.assertIn(params["order"][0],("volume24hr","endDate"))
+            self.assertEqual(params["ascending"],["true"] if params["order"][0]=="endDate" else ["false"])
             self.assertEqual(timeout,20)
             return Response([{"id":"1","question":"Test","outcomePrices":json.dumps(["0.5","0.5"])}])
         markets,page=fetch_markets(limit=10,opener=opener)
@@ -36,7 +36,7 @@ class PolymarketPublicTests(unittest.TestCase):
             return Response([{"id":"same","question":"Overlapping event"}])
         markets,info=fetch_markets(limit=10,max_pages=2,opener=opener)
         self.assertEqual(len(markets),1)
-        self.assertEqual(seen,["volume_24hr","end_date"])
+        self.assertEqual(seen,["volume24hr","endDate"])
         self.assertTrue(info["deduplicated"])
     def test_single_strategy_never_claims_full_coverage(self):
         markets,meta=fetch_markets(limit=10,max_pages=1,
