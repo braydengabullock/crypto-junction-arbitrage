@@ -124,6 +124,7 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                     "kalshi_expiration_time":market.get("expiration_time"),
                     "polymarket_end_date":other.get("endDate"),
                     "polymarket_clob_token_ids":other.get("clobTokenIds"),
+                    "polymarket_outcomes":other.get("outcomes"),
                     "polymarket_orderbook_enabled":other.get("enableOrderBook"),
                     "polymarket_accepting_orders":other.get("acceptingOrders"),
                     "kalshi_rule_url":None,
