@@ -22,7 +22,9 @@ def update(previous,current):
         key=lambda r:(r.get("quote_quality_passed") is not True,
                       -int(r.get("near_break_even_streak",0)),
                       max(0,-Decimal(str(r["fixed_ten_current_net_usd"])))))[:5]
-    current["shortlist_evidence_status"]="DEPTH_AND_QUOTE_QUALITY_NOT_YET_LINKED_TO_PAIR; RESEARCH_ONLY"
+    current["shortlist_quality_passed"]=sum(r.get("quote_quality_passed") is True for r in current["research_shortlist"])
+    current["shortlist_quality_unverified"]=len(current["research_shortlist"])-current["shortlist_quality_passed"]
+    current["shortlist_evidence_status"]="QUOTE_TIMING_AND_TEN-CONTRACT_DEPTH_SCREENED; RULES, FEES AND EXECUTION UNVERIFIED"
     current["persistent_near_break_even_pairs"]=sum(r.get("near_break_even_streak",0)>=2 for r in current.get("changes",[]))
     return current
 
@@ -35,4 +37,4 @@ if __name__=="__main__":
     a=p.parse_args()
     result=update(json.loads(Path(a.previous).read_text()),json.loads(Path(a.current).read_text()))
     Path(a.output).write_text(json.dumps(result,indent=2))
-    print(json.dumps({"persistent_near_break_even_pairs":result["persistent_near_break_even_pairs"]}))
+    print(json.dumps({"persistent_near_break_even_pairs":result["persistent_near_break_even_pairs"],"shortlist_quality_passed":result["shortlist_quality_passed"],"shortlist_quality_unverified":result["shortlist_quality_unverified"]}))
