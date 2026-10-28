@@ -13,6 +13,15 @@ class EconomicsTests(unittest.TestCase):
         self.assertEqual(r["fixed_ten_pairs_analyzed"],3)
         self.assertEqual(list(r["counts"].values()),[1,1,1])
         self.assertFalse(r["trade_allowed"])
+    def test_league_breakdown_does_not_conflate_contract_sides(self):
+        nba=pair("-0.1","0.2","-0.3")
+        nba["kalshi_ticker"]="KXNBAGAME-26OCT28AAABBB-AAA"
+        nhl=pair("0.1","0.3","-0.2")
+        nhl["kalshi_ticker"]="KXNHLGAME-26OCT28AAABBB-AAA"
+        result=diagnose({"near_misses":[nba,nhl]})
+        self.assertEqual(result["by_league"]["NBA"]["pairs"],1)
+        self.assertEqual(result["by_league"]["NHL"]["positive_raw_spread_pairs"],1)
+        self.assertEqual(result["by_league"]["NHL"]["positive_illustrative_net_pairs"],0)
     def test_missing_benchmark_excluded(self):
         r=diagnose({"near_misses":[{"fixed_ten_contract_pairs":None}]})
         self.assertEqual(r["fixed_ten_pairs_analyzed"],0)
