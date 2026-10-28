@@ -3,6 +3,7 @@ import argparse
 import json
 from decimal import Decimal,InvalidOperation
 from pathlib import Path
+from collections import defaultdict
 
 def diagnose(data):
     rows=[]
@@ -24,10 +25,25 @@ def diagnose(data):
                      "economics_category":"RAW_SPREAD_NONPOSITIVE" if raw<=0 else
                         ("FRICTION_ERASES_SPREAD" if net<=0 else "POSITIVE_ILLUSTRATIVE_UNVERIFIED"),
                      "quote_quality":item.get("quote_quality",{})})
+    league_groups=defaultdict(list)
+    for row in rows:
+        ticker=str(row.get("kalshi_ticker") or "")
+        league=ticker.split("GAME-",1)[0].removeprefix("KX") if "GAME-" in ticker else "OTHER"
+        league_groups[league].append(row)
+    by_league={}
+    for league,group in sorted(league_groups.items()):
+        by_league[league]={
+            "pairs":len(group),
+            "positive_raw_spread_pairs":sum(Decimal(x["raw_displayed_spread_usd"])>0 for x in group),
+            "positive_illustrative_net_pairs":sum(Decimal(x["illustrative_net_usd"])>0 for x in group),
+            "best_raw_spread_usd":str(max(Decimal(x["raw_displayed_spread_usd"]) for x in group)),
+            "best_illustrative_net_usd":str(max(Decimal(x["illustrative_net_usd"]) for x in group)),
+            "mean_raw_spread_usd":str(sum(Decimal(x["raw_displayed_spread_usd"]) for x in group)/len(group)),
+        }
     counts={category:sum(x["economics_category"]==category for x in rows)
             for category in ("RAW_SPREAD_NONPOSITIVE","FRICTION_ERASES_SPREAD","POSITIVE_ILLUSTRATIVE_UNVERIFIED")}
     return {"research_only":True,"trade_allowed":False,"verified_opportunities":0,
-            "fixed_ten_pairs_analyzed":len(rows),"counts":counts,"rows":rows,
+            "fixed_ten_pairs_analyzed":len(rows),"counts":counts,"by_league":by_league,"rows":rows,
             "warning":"Fee assumptions, settlement equivalence and execution unverified. Categories describe only modeled fixed-ten economics."}
 
 def main():
@@ -37,6 +53,6 @@ def main():
     a=p.parse_args()
     result=diagnose(json.loads(Path(a.input).read_text(encoding="utf-8")))
     Path(a.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
-    print(json.dumps({"fixed_ten_pairs_analyzed":result["fixed_ten_pairs_analyzed"],"counts":result["counts"]}))
+    print(json.dumps({"fixed_ten_pairs_analyzed":result["fixed_ten_pairs_analyzed"],"counts":result["counts"],"by_league":result["by_league"]}))
 if __name__=="__main__":
     main()
