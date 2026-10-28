@@ -62,7 +62,7 @@ jobs:
                 "paired_books_collected", "timestamp_aligned_candidates",
                 "displayed_depth_on_both_venues", "api_errors")),
               ("preflight_report.json", ("observation_usable", "issues")),
-              ("one_event_book_probe.json", ("status", "rule_equivalence_verified")),
+              ("one_event_book_probe.json", ("status", "both_event_apis_returned", "rule_equivalence_verified")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -72,6 +72,16 @@ jobs:
               except (OSError, ValueError) as exc:
                   lines.append("- " + name + ": unavailable (" + type(exc).__name__ + ")")
           lines.append("")
+          try:
+              event=json.loads(Path("one_event_book_probe.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### One-game evidence", 
+                            "- Kalshi contracts: " + str([c.get("ticker") for c in event.get("kalshi_contracts",[])]),
+                            "- Polymarket contracts: " + str([c.get("id") for c in event.get("polymarket_contracts",[])]),
+                            "- Book observations: " + str(len(event.get("book_probes",[]))),
+                            "- Event API errors: " + str(event.get("event_api_errors",[])),
+                            "- Book errors: " + str(event.get("errors",[])), ""])
+          except (OSError,ValueError):
+              lines.append("One-game evidence report unavailable.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
