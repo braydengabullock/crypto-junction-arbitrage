@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Probe one shared NBA event (read only)
+        run: python one_event_discovery.py
       - name: Capture Kalshi public market metadata
         run: python capture_kalshi.py --limit 100 --max-pages 10
       - name: Capture Polymarket public market metadata
@@ -88,5 +90,6 @@ jobs:
             orderbook_quality.json
             phase1_real_data_report.json
             preflight_report.json
+            one_event_discovery.json
           retention-days: 14
           if-no-files-found: warn
