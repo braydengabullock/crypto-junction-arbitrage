@@ -39,7 +39,9 @@ def compare(previous,current):
             "trend":"NEW" if prior is None else "SIZE_CHANGED_NOT_COMPARABLE" if not same_size else ("IMPROVING" if new_profit>old_profit else "WORSENING" if new_profit<old_profit else "UNCHANGED"),
             "research_only":True})
     counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW","SIZE_CHANGED_NOT_COMPARABLE")}
+    benchmark_counts={name:sum(x["fixed_ten_trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","UNAVAILABLE")}
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
+            "fixed_ten_trend_counts":benchmark_counts,
             "trend_counts":counts,
             "comparable_pairs":sum(x["change_usd"] is not None for x in changes),
             "changes":changes,"warning":"Sequential snapshots are not simultaneous executable quotes."}
@@ -54,4 +56,5 @@ if __name__=="__main__":
     out=compare(json.loads(Path(args.previous).read_text()),json.loads(Path(args.current).read_text()))
     Path(args.output).write_text(json.dumps(out,indent=2))
     print(json.dumps({"comparable_pairs":out["comparable_pairs"],"pairs_seen":len(out["changes"]),
-                      "trend_counts":out["trend_counts"]}))
+                      "trend_counts":out["trend_counts"],
+                      "fixed_ten_trend_counts":out["fixed_ten_trend_counts"]}))
