@@ -112,3 +112,10 @@ The original `paper_journal.py` has also been corrected to use the evaluator's c
 ## V1.2 — Displayed-depth scenario research
 
 `depth_pair_review.review()` accepts two **manually chosen** public orderbooks, their observation times, which side of Kalshi to buy, explicit per-contract fee assumptions, and a total budget no greater than $100. It walks multiple price levels, refuses stale paired observations (over 20 seconds apart), refuses insufficient depth and missing fee inputs, and lists *hypothetical* combinations meeting at least 2% modeled return. It **does not** validate that the Polymarket token is the opposing outcome or that settlement terms are equivalent. It never labels the results as verified opportunities, never sends Telegram alerts, never trades, and makes no claims of achievable profit. Public orderbooks are non-atomic observations, not historical fills. Trading restrictions still apply.
+
+
+## V1.3 — Settlement-rule dossier (research only)
+
+`rule_dossier.review_rules(a,b)` compares explicitly entered source-rule summaries for: underlying event and precise question, resolution source, threshold/units, UTC observation window, resolution condition, exceptions/cancellations, dispute policy, payout currency and amount, and selected complementary YES/NO sides. Both official rules links and separately reviewed evidence must be supplied. Missing or differing fields fail closed. Even matching summaries produce **MANUAL_EVIDENCE_MATCH**, **never** verified arbitrage or permission to trade: the summaries can be wrong, and different venues can interpret the same words differently. This module does not call an exchange API, place orders, or send Telegram alerts. Independent primary-source verification and legal eligibility remain prerequisites.
+
+Run `python -m unittest discover -s tests -v` to test all modules. GitHub workflow results need separate confirmation.
