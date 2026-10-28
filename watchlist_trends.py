@@ -13,7 +13,9 @@ def compare(previous,current):
                 qty=int(r.get("contracts_each",0))
                 fixed=r.get("fixed_ten_contract_pairs") or {}
                 fixed_profit=Decimal(str(fixed["hypothetical_net_usd"])) if fixed.get("contracts_each")==10 else None
-                if val.is_finite():result[key]=(val,qty,fixed_profit)
+                quality=r.get("quote_quality") or {}
+                quality_ok=(quality.get("both_books_present") is True and quality.get("within_20_seconds") is True and quality.get("sufficient_depth_for_ten") is True)
+                if val.is_finite():result[key]=(val,qty,fixed_profit,quality_ok)
             except (KeyError,InvalidOperation,TypeError):continue
         return result
     old=index(previous);new=index(current)
@@ -22,12 +24,12 @@ def compare(previous,current):
         prior=old.get(key)
         old_profit=prior[0] if prior is not None else None
         old_qty=prior[1] if prior is not None else None
-        new_profit,new_qty,new_fixed=value
+        new_profit,new_qty,new_fixed,quality_ok=value
         old_fixed=prior[2] if prior is not None else None
         benchmark_comparable=(old_fixed is not None and new_fixed is not None)
         same_size=old_qty==new_qty and new_qty>0 if prior is not None else False
-        priority=("APPROACHING_BREAK_EVEN" if benchmark_comparable and new_fixed>old_fixed and new_fixed<0 and new_fixed>=Decimal("-0.25") else
-                  "POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION" if new_fixed is not None and new_fixed>0 else
+        priority=("APPROACHING_BREAK_EVEN" if quality_ok and benchmark_comparable and new_fixed>old_fixed and new_fixed<0 and new_fixed>=Decimal("-0.25") else
+                  "POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION" if quality_ok and new_fixed is not None and new_fixed>0 else
                   "MONITOR_ONLY")
         previous_streak=0
         if prior is not None:
@@ -53,7 +55,7 @@ def compare(previous,current):
     counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW","SIZE_CHANGED_NOT_COMPARABLE")}
     priority_counts={name:sum(x["monitoring_priority"]==name for x in changes) for name in ("APPROACHING_BREAK_EVEN","POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION","MONITOR_ONLY")}
     benchmark_counts={name:sum(x["fixed_ten_trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","UNAVAILABLE")}
-    ranked=sorted(changes,key=lambda x:(x["distance_to_break_even_fixed_ten_usd"] is None,
+    ranked=sorted(changes,key=lambda x:(not x["quote_quality_passed"],x["distance_to_break_even_fixed_ten_usd"] is None,
         Decimal(x["distance_to_break_even_fixed_ten_usd"]) if x["distance_to_break_even_fixed_ten_usd"] is not None else Decimal("999999")))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
             "closest_fixed_ten_pairs":ranked[:5],
