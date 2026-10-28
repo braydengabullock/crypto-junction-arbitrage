@@ -21,16 +21,17 @@ def roi_tier(profit, cost):
         return "HIGHER_PRIORITY_0_5_PLUS"
     return "SMALL_POSITIVE"
 
-def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="100",fx_cost=None,opposing_tokens=None):
+def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="5000",fx_cost=None,opposing_tokens=None):
     result={"research_only":True,"trade_allowed":False,"fee_inputs_verified":False,
             "market_rules_verified":False,"net_profit_verified":False,
             "status":"FEE_INPUTS_REQUIRED","rows":[],"near_misses":[]}
     if any(v is None for v in (poly_rate,kalshi_multiplier,extra_cost)):
         return result
     cap=positive(budget)
-    if cap>100: raise ValueError("Combined $100 budget ceiling")
+    if cap>5000: raise ValueError("Combined $5,000 research budget ceiling")
     fixed=positive(extra_cost); rate=positive(poly_rate); mult=positive(kalshi_multiplier)
     fx=positive(fx_cost) if fx_cost is not None else Decimal("0")
+    result["max_combined_research_budget_usd"]=str(cap)
     result["fx_cost_supplied"]=fx_cost is not None
     result["fx_cost_assumed_usd"]=str(fx)
     result["status"]="OPPOSING_OUTCOME_MAPPING_REQUIRED" if opposing_tokens is None else "ILLUSTRATIVE_ONLY_UNVERIFIED_RULES_AND_FEES"
@@ -62,7 +63,9 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                             quote_quality["within_20_seconds"]=span<=20
                     except (KeyError,ValueError,TypeError):
                         pass
-                    for n in range(1,101):
+                    # Whole-contract positions, limited by both displayed books and budget.
+                    max_depth=int(min(sum(qty for _,qty in kl),sum(qty for _,qty in pl)))
+                    for n in range(1,min(max_depth,10000)+1):
                         kc=depth_cost(kl,n);pc=depth_cost(pl,n)
                         if not (kc["depth_sufficient"] and pc["depth_sufficient"]): break
                         # Fee curve evaluated on the cost-weighted displayed average
@@ -131,6 +134,7 @@ if __name__=="__main__":
     a.add_argument("--poly-rate")
     a.add_argument("--kalshi-multiplier")
     a.add_argument("--extra-cost")
+    a.add_argument("--budget",default="5000",help="Maximum combined research cost in USD, up to 5000")
     a.add_argument("--fx-cost",help="Explicit modeled USD currency-conversion cost; omit when unknown")
     a.add_argument("--opposing-token-map",help="Reviewed ticker|side to opposite Polymarket token mapping JSON")
     z=a.parse_args()
@@ -140,7 +144,7 @@ if __name__=="__main__":
         if mapping.get("mapping_method")!="exact_event_id_and_two_unambiguous_outcome_labels" or mapping.get("market_rules_verified") is not False:
             raise ValueError("Unsupported or incorrectly certified outcome mapping")
         mapping=mapping["opposing_token_map"]
-    out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,fx_cost=z.fx_cost,opposing_tokens=mapping)
+    out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,budget=z.budget,fx_cost=z.fx_cost,opposing_tokens=mapping)
     Path(z.output).write_text(json.dumps(out,indent=2),encoding="utf-8")
     print(json.dumps({"status":out["status"],"candidate_scenarios":len(out["rows"]),
                       "net_profit_verified":False,"mapped_pairs_priced":out.get("mapped_pairs_priced",0),
