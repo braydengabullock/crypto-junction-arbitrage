@@ -27,6 +27,8 @@ jobs:
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
       - name: Sample candidate public order books (research only)
         run: python candidate_orderbooks.py --matches research_matches.json --max-pairs 5 --output candidate_orderbooks.json
+      - name: Audit public orderbook evidence quality
+        run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
         run: |
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
@@ -41,5 +43,6 @@ jobs:
             research_matches.json
             readiness_report.json
             candidate_orderbooks.json
+            orderbook_quality.json
           retention-days: 14
           if-no-files-found: error
