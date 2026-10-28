@@ -13,6 +13,16 @@ class LeagueSamplingTests(unittest.TestCase):
                        fetch_p=lambda token:{"asks":[]})
         self.assertEqual(result["sampled_candidates"],4)
         self.assertEqual(result["sampled_leagues"],{"NBA":2,"NHL":2})
+    def test_distinct_games_before_second_team_side(self):
+        first=candidate("NBA",1)
+        second=dict(first)
+        second["kalshi_ticker"]=first["kalshi_ticker"].rsplit("-",1)[0]+"-BBB"
+        other=candidate("NBA",2)
+        result=collect([first,second,other],max_pairs=2,
+                       fetch_k=lambda ticker:{},fetch_p=lambda token:{})
+        self.assertEqual(result["distinct_events_sampled"],2)
+        self.assertEqual([r["kalshi_ticker"] for r in result["rows"]],
+                         [first["kalshi_ticker"],other["kalshi_ticker"]])
     def test_cap_and_allowed_tickers_remain_enforced(self):
         candidates=[candidate("NBA",1),candidate("NHL",2)]
         result=collect(candidates,max_pairs=2,allowed_tickers={candidates[1]["kalshi_ticker"]},
