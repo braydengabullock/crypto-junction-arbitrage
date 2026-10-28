@@ -10,20 +10,27 @@ def compare(previous,current):
             key=(str(r.get("kalshi_ticker")),str(r.get("kalshi_side")),str(r.get("polymarket_token_id")))
             try:
                 val=Decimal(str(r["illustrative_net_usd"]))
-                if val.is_finite():result[key]=val
+                qty=int(r.get("contracts_each",0))
+                if val.is_finite():result[key]=(val,qty)
             except (KeyError,InvalidOperation,TypeError):continue
         return result
     old=index(previous);new=index(current)
     changes=[]
     for key,value in new.items():
         prior=old.get(key)
+        old_profit=prior[0] if prior is not None else None
+        old_qty=prior[1] if prior is not None else None
+        new_profit,new_qty=value
+        same_size=old_qty==new_qty and new_qty>0 if prior is not None else False
         changes.append({"kalshi_ticker":key[0],"kalshi_side":key[1],
-            "polymarket_token_id":key[2],"previous_net_usd":str(prior) if prior is not None else None,
-            "current_net_usd":str(value),
-            "change_usd":str(value-prior) if prior is not None else None,
-            "trend":"NEW" if prior is None else ("IMPROVING" if value>prior else "WORSENING" if value<prior else "UNCHANGED"),
+            "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
+            "current_net_usd":str(new_profit),
+            "previous_contracts_each":old_qty,"current_contracts_each":new_qty,
+            "same_position_size":same_size,
+            "change_usd":str(new_profit-old_profit) if same_size else None,
+            "trend":"NEW" if prior is None else "SIZE_CHANGED_NOT_COMPARABLE" if not same_size else ("IMPROVING" if new_profit>old_profit else "WORSENING" if new_profit<old_profit else "UNCHANGED"),
             "research_only":True})
-    counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW")}
+    counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW","SIZE_CHANGED_NOT_COMPARABLE")}
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
             "trend_counts":counts,
             "comparable_pairs":sum(x["change_usd"] is not None for x in changes),
