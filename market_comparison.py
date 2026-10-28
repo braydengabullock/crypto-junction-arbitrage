@@ -60,6 +60,7 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
     p_markets=polymarket["markets"]
     for ix, market in enumerate(p_markets):
         if not eligible_for_simple_match(market): continue
+        if market.get("enableOrderBook") is False or market.get("acceptingOrders") is False: continue
         for word in candidate_words(market):
             index[word].append(ix)
     results=[]
@@ -89,6 +90,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                     "kalshi_expiration_time":market.get("expiration_time"),
                     "polymarket_end_date":other.get("endDate"),
                     "polymarket_clob_token_ids":other.get("clobTokenIds"),
+                    "polymarket_orderbook_enabled":other.get("enableOrderBook"),
+                    "polymarket_accepting_orders":other.get("acceptingOrders"),
                     "kalshi_rule_url":None,
                     "polymarket_rule_url":None,
                     "review_required":[
