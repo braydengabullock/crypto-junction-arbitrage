@@ -28,13 +28,13 @@ jobs:
         run: python kalshi_sports_capture.py
       - name: Capture Polymarket public market metadata
         run: python polymarket_public.py --limit 100 --max-pages 10
-      - name: Diagnose Polymarket public CLOB access without bypasses
-        run: python clob_access_diagnostic.py
       - name: Find titles requiring human resolution-rule review
         run: |
           K="kalshi_sports_snapshot.json"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Diagnose Polymarket public CLOB access without bypasses
+        run: python clob_access_diagnostic.py
       - name: Screen multi-market indicative outcome candidates (no executable quote)
         run: |
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
