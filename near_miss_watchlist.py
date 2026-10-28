@@ -17,6 +17,13 @@ def rank(report, limit=10):
             if not gain.is_finite() or not cost.is_finite() or cost<=0 or quantity<1 or cost>100: continue
             gap=max(-gain+Decimal("0.01"),Decimal("0"))
         except (KeyError,ValueError,TypeError,InvalidOperation): continue
+        fixed=item.get("fixed_ten_contract_pairs") or {}
+        fixed_gain=None
+        if fixed.get("contracts_each")==10:
+            try:
+                fixed_gain=Decimal(str(fixed["hypothetical_net_usd"]))
+                if not fixed_gain.is_finite(): fixed_gain=None
+            except (KeyError,ValueError,InvalidOperation,TypeError): fixed_gain=None
         rows.append({"kalshi_ticker":item.get("kalshi_ticker"),
                      "polymarket_token_id":item.get("polymarket_token_id"),
                      "kalshi_side":item.get("kalshi_side"),
@@ -25,6 +32,7 @@ def rank(report, limit=10):
                      "illustrative_net_usd":str(gain),
                      "cost_reduction_for_one_cent_profit_usd":str(gap),
                      "fixed_ten_contract_pairs":item.get("fixed_ten_contract_pairs"),
+                     "fixed_ten_gap_to_one_cent_usd":str(max(Decimal("0.01")-fixed_gain,Decimal("0"))) if fixed_gain is not None else None,
                      "monitor_only":True,"rules_verified":False})
     rows.sort(key=lambda x:(Decimal(x["cost_reduction_for_one_cent_profit_usd"]),-Decimal(x["illustrative_net_usd"])))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
