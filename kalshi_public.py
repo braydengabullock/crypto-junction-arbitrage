@@ -30,7 +30,7 @@ def fetch_markets(limit=30, event_ticker=None, opener=urlopen):
     return obj["markets"]
 
 
-def fetch_market_pages(*, page_size=100, max_pages=5, event_ticker=None, opener=urlopen):
+def fetch_market_pages(*, page_size=100, max_pages=5, event_ticker=None, series_ticker=None, opener=urlopen):
     """Bounded, read-only cursor pagination. Reports whether coverage is complete."""
     if not 1 <= page_size <= 100 or not 1 <= max_pages <= 20:
         raise ValueError("Invalid page size or page cap")
@@ -39,6 +39,8 @@ def fetch_market_pages(*, page_size=100, max_pages=5, event_ticker=None, opener=
         params = {"limit": page_size, "status": "open"}
         if event_ticker:
             params["event_ticker"] = event_ticker
+        if series_ticker:
+            params["series_ticker"] = series_ticker
         if cursor:
             params["cursor"] = cursor
         req = Request(BASE_URL + "/markets?" + urlencode(params),
