@@ -9,7 +9,7 @@ class CaptureTests(unittest.TestCase):
     def test_snapshot_retains_timestamp_and_limitations(self):
         fake=[{"ticker":"TEST-1","title":"Mock event","status":"open","yes_ask_dollars":"0.45"}]
         with tempfile.TemporaryDirectory() as folder:
-            with patch("capture_kalshi.fetch_markets",return_value=fake) as source:
+            with patch("capture_kalshi.fetch_market_pages",return_value=(fake,{"complete":True,"pages_fetched":1})) as source:
                 path=capture(limit=1,output_dir=folder)
             self.assertTrue(Path(path).is_file())
             data=json.loads(Path(path).read_text())
@@ -17,7 +17,7 @@ class CaptureTests(unittest.TestCase):
             self.assertFalse(data["data_quality"]["depth_verified"])
             self.assertFalse(data["data_quality"]["forecast_ex_match_verified"])
             self.assertIn("observed_at",data)
-            source.assert_called_once_with(limit=1,event_ticker=None)
+            source.assert_called_once_with(page_size=1,max_pages=5,event_ticker=None)
 
 if __name__=="__main__":
     unittest.main()
