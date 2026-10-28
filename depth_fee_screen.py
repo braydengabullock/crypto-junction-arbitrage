@@ -62,7 +62,14 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         if n==10:
                             quote_quality["sufficient_depth_for_ten"]=True
                             fixed_ten={"contracts_each":10,"total_cost_usd":str(total),
-                                       "hypothetical_net_usd":str(profit)}
+                                       "hypothetical_net_usd":str(profit),
+                                       "displayed_kalshi_cost_usd":str(kc["displayed_cost_usd"]),
+                                       "displayed_polymarket_cost_usd":str(pc["displayed_cost_usd"]),
+                                       "raw_displayed_spread_usd":str(Decimal(n)-Decimal(kc["displayed_cost_usd"])-Decimal(pc["displayed_cost_usd"])),
+                                       "modeled_kalshi_fee_usd":str(kfee),
+                                       "modeled_polymarket_fee_usd":str(pfee),
+                                       "assumed_extra_cost_usd":str(fixed),
+                                       "modeled_total_friction_usd":str(kfee+pfee+fixed)}
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
                             closest={"contracts_each":n,"total_cost_usd":str(total),
                                      "hypothetical_net_usd":str(profit),
