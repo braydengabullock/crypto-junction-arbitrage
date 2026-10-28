@@ -23,7 +23,9 @@ def compare(previous,current):
             "change_usd":str(value-prior) if prior is not None else None,
             "trend":"NEW" if prior is None else ("IMPROVING" if value>prior else "WORSENING" if value<prior else "UNCHANGED"),
             "research_only":True})
+    counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW")}
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
+            "trend_counts":counts,
             "comparable_pairs":sum(x["change_usd"] is not None for x in changes),
             "changes":changes,"warning":"Sequential snapshots are not simultaneous executable quotes."}
 
@@ -36,4 +38,5 @@ if __name__=="__main__":
     args=p.parse_args()
     out=compare(json.loads(Path(args.previous).read_text()),json.loads(Path(args.current).read_text()))
     Path(args.output).write_text(json.dumps(out,indent=2))
-    print(json.dumps({"comparable_pairs":out["comparable_pairs"],"pairs_seen":len(out["changes"])}))
+    print(json.dumps({"comparable_pairs":out["comparable_pairs"],"pairs_seen":len(out["changes"]),
+                      "trend_counts":out["trend_counts"]}))
