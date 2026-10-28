@@ -4,7 +4,7 @@ No event identity, price, or arb claim is inferred from text similarity.
 """
 import json
 from pathlib import Path
-from market_comparison import tokenize, SPORT_TERMS, eligible_for_simple_match
+from market_comparison import eligible_for_simple_match
 
 def shortlist(matches, *, limit=25):
     if limit<1: raise ValueError("Positive cap required")
@@ -15,8 +15,8 @@ def shortlist(matches, *, limit=25):
         if not m.get("sports_candidate"): continue
         if not eligible_for_simple_match({"ticker":m.get("kalshi_ticker"),"title":m.get("kalshi_title")},kalshi=True): continue
         if not eligible_for_simple_match({"question":m.get("polymarket_question")}): continue
-        title=" ".join((str(m.get("kalshi_title") or ""),str(m.get("polymarket_question") or "")))
-        if not (tokenize(title) & SPORT_TERMS): continue
+        # sports_candidate already came from the upstream classifier. Requiring
+        # a sport name AGAIN loses team-only markets (e.g. Thunder vs Mavericks).
         key=(str(m.get("kalshi_ticker")),str(m.get("polymarket_id")))
         if key in seen: continue
         seen.add(key)
