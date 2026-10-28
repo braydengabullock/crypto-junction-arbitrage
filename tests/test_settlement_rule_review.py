@@ -1,5 +1,5 @@
 import unittest
-from settlement_rule_review import build,CHECKS
+from settlement_rule_review import build,enrich,CHECKS
 
 class SettlementReviewTests(unittest.TestCase):
     def test_each_pair_requires_independent_rule_evidence(self):
@@ -22,6 +22,31 @@ class SettlementReviewTests(unittest.TestCase):
     def test_missing_mapping_rejected(self):
         with self.assertRaises(ValueError):
             build({"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels"})
+
+    def test_snapshot_rule_texts_collected_without_approval(self):
+        mapping={"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels",
+                 "opposing_token_map":{"GAME|YES":"123"}}
+        kalshi={"markets":[{"ticker":"GAME","rules_primary":"Official result after overtime"}]}
+        polymarket={"markets":[{"id":"77","slug":"game-77",
+                    "clobTokenIds":'["123","456"]',
+                    "description":"Regulation result only",
+                    "resolutionSource":"League statistics"}]}
+        result=enrich(build(mapping),kalshi,polymarket)
+        row=result["review_records"][0]
+        self.assertTrue(row["source_fields_collected"])
+        self.assertEqual(row["status"],"RULE_TEXT_COLLECTED_REVIEW_REQUIRED")
+        self.assertEqual(result["records_with_both_rule_texts"],1)
+        self.assertFalse(row["rule_equivalence_verified"])
+        self.assertEqual(result["verified_pairs"],0)
+        self.assertIn("Regulation",row["polymarket_rule_text"])
+
+    def test_missing_source_fails_closed(self):
+        mapping={"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels",
+                 "opposing_token_map":{"GAME|YES":"123"}}
+        result=enrich(build(mapping),{"markets":[]},{"markets":[]})
+        self.assertEqual(result["records_with_both_rule_texts"],0)
+        self.assertEqual(result["review_records"][0]["status"],"RULE_EVIDENCE_INCOMPLETE")
+        self.assertFalse(result["review_records"][0]["rule_equivalence_verified"])
 
     def test_malformed_entries_excluded(self):
         report=build({"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels",
