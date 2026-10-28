@@ -15,7 +15,7 @@ class DepthPairTests(unittest.TestCase):
         k={"orderbook_fp":{"no_dollars":[["0.49","100"]],"yes_dollars":[]}}
         p={"asks":[{"price":"0.48","size":"100"}]}
         r=review(k,p,kalshi_side="YES",observed_kalshi=T,observed_polymarket=T,
-            fee_kalshi="0.002",fee_polymarket="0.002",other_cost_usd="0.10")
+            fee_kalshi="0.002",fee_polymarket="0.002",other_cost_usd="0.003")
         self.assertTrue(r["scenarios"])
         self.assertEqual(r["scenarios"][0]["priority"],"SMALL_POSITIVE")
     def test_other_costs_required(self):
