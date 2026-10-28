@@ -46,6 +46,16 @@ class HistoricalAuditTests(unittest.TestCase):
         summary=audit([p])
         self.assertEqual(summary["conditional_losses"],1)
         self.assertEqual(summary["conditional_wins"],0)
+    def test_settlement_outside_two_hours_blocked(self):
+        p=sample()
+        p["actual_settlement_time"]="2026-10-28T18:00:02Z"
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
+    def test_cash_reuse_is_never_assumed(self):
+        self.assertIs(evaluate(sample())["cash_reuse_verified"],False)
+    def test_payout_above_one_dollar_rejected(self):
+        p=sample()
+        p["actual_payout_per_pair"]="1.25"
+        self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
     def test_budget(self):
         r=evaluate(sample(),budget="50")
         self.assertEqual(r["contracts_per_leg"],52)
