@@ -66,7 +66,7 @@ def fetch_kalshi_book(ticker, opener=urlopen):
 def fetch_polymarket_book(token_id, opener=urlopen):
     if not str(token_id).isdigit(): raise ValueError("Numeric token ID required")
     url="https://clob.polymarket.com/book?"+urlencode({"token_id":str(token_id)})
-    with opener(Request(url,headers={"Accept":"application/json"}),timeout=20) as response:
+    with opener(Request(url,headers={"Accept":"application/json","User-Agent":"CryptoJunctionResearch/1.0"}),timeout=20) as response:
         return json.load(response)
 
 def research_capture(*,kalshi_ticker,polymarket_token_id,opener=urlopen):
