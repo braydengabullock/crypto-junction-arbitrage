@@ -13,6 +13,9 @@ class CandidateBookTests(unittest.TestCase):
                   fetch_k=lambda _:{"orderbook_fp":{}},
                   fetch_p=lambda _:{"asks":[]})
         self.assertEqual(len(r["rows"][0]["observations"]),3)
+        for observation in r["rows"][0]["observations"]:
+            self.assertIn("request_started_at",observation)
+            self.assertIn("observed_at",observation)
         self.assertEqual(r["verified_opportunities"],0)
         self.assertFalse(r["rows"][0]["executable_opportunity_verified"])
     def test_failure_is_visible(self):
