@@ -17,6 +17,14 @@ class ShortlistTests(unittest.TestCase):
            "sports_candidate":True,"title_similarity":1}
         b=dict(a,kalshi_ticker="KXPARLAY-FOO",polymarket_id="P2")
         self.assertEqual(shortlist({"candidates":[a,b]})["sports_candidates_returned"],0)
+    def test_team_only_sports_title_survives(self):
+        a={"kalshi_ticker":"KXNBAGAME-26OCT28OKCDAL-OKC",
+           "polymarket_id":"NBA1","kalshi_title":"Oklahoma City Thunder",
+           "polymarket_question":"Thunder vs. Mavericks",
+           "title_similarity":0.8,"sports_candidate":True}
+        result=shortlist({"candidates":[a]})
+        self.assertEqual(result["sports_candidates_returned"],1)
+        self.assertFalse(result["candidates"][0]["rules_verified"])
     def test_limit(self):
         with self.assertRaises(ValueError): shortlist({},limit=0)
 if __name__=="__main__": unittest.main()
