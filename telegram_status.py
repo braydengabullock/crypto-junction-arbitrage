@@ -6,19 +6,20 @@ import urllib.request
 from pathlib import Path
 
 def status_message(snapshot_path):
-    data=json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
-    if data.get("source")!="kalshi_public" or not data.get("research_only"):
+    data = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+    if data.get("source") != "kalshi_public" or not data.get("research_only"):
         raise ValueError("Only read-only Kalshi snapshots supported")
-    quality=data.get("data_quality",{})
-    return ("Crypto Junction — Arbitrage Research Status\n"
-            f"Kalshi snapshot: {data['observed_at']}\n"
-            f"Open markets sampled: {quality.get('market_count',len(data.get('markets',[])))}\n"
-            ("Data: Kalshi public quotes only; " +
-             ("complete paginated retrieval." if quality.get("pagination", {}).get("complete")
-              else "partial sampled retrieval.") + "\n")
-
-            "ForecastEx feed: NOT CONNECTED.\n"
-            "Verified opportunities: NONE. No orders placed.")
+    quality = data.get("data_quality", {})
+    coverage = ("complete paginated retrieval" if quality.get("pagination", {}).get("complete")
+                else "partial sampled retrieval")
+    return (
+        "Crypto Junction — Arbitrage Research Status\n"
+        f"Kalshi snapshot: {data['observed_at']}\n"
+        f"Open markets sampled: {quality.get('market_count', len(data.get('markets', [])))}\n"
+        f"Data: Kalshi public quotes only; {coverage}.\n"
+        "ForecastEx feed: NOT CONNECTED.\n"
+        "Verified opportunities: NONE. No orders placed."
+    )
 
 def send_status(snapshot_path, *, sender=None):
     message=status_message(snapshot_path)
