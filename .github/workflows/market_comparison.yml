@@ -143,7 +143,7 @@ jobs:
               ("clob_access_diagnostic.json", ("access_conclusion", "requests")),
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
-              ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts")),
+              ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts", "by_league")),
               ("watchlist_trends.json", ("comparable_pairs",)),
               ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
               ("settlement_rule_triage.json", ("records_examined", "records_with_text_mention_differences", "verified_pairs")),
