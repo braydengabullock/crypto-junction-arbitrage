@@ -65,7 +65,8 @@ def evaluate(row, *, budget="100", roi_floor="2"):
         spent=per_pair*qty
         gain=(payout-per_pair)*qty
         roi=(gain/spent*100) if spent else Decimal(0)
-        if roi < dec(roi_floor):
+        projected_roi=((Decimal(1)-per_pair)/per_pair*100) if per_pair else Decimal(0)
+        if projected_roi < dec(roi_floor):
             reasons.append("Below required modeled net ROI")
     except (TypeError,ValueError,InvalidOperation,OverflowError) as exc:
         return {"id":row.get("id"),"status":"INSUFFICIENT_EVIDENCE","reasons":[str(exc)]}
@@ -77,6 +78,7 @@ def evaluate(row, *, budget="100", roi_floor="2"):
             "modeled_cost_usd":str(spent.quantize(MONEY)),
             "modeled_profit_usd":str(gain.quantize(MONEY)),
             "modeled_net_roi_pct":str(roi.quantize(Decimal("0.001"))),
+            "entry_projected_roi_pct":str(projected_roi.quantize(Decimal("0.001"))),
             "caveat":"Evidence flags and payouts supplied externally; no authenticated historical fills verified."}
 
 def audit(rows):
@@ -85,10 +87,13 @@ def audit(rows):
     results=[evaluate(row) for row in rows]
     valid=[r for r in results if r["status"]=="CONDITIONAL_PAPER_RESULT"]
     profit=sum((Decimal(x["modeled_profit_usd"]) for x in valid),Decimal(0))
+    wins=sum(1 for x in valid if Decimal(x["modeled_profit_usd"])>0)
+    losses=sum(1 for x in valid if Decimal(x["modeled_profit_usd"])<0)
     return {"type":"HISTORICAL_RESEARCH_AUDIT","actual_realized_profit_usd":None,
             "observations":len(results),"conditional_paper_observations":len(valid),
             "unverified_or_rejected":len(results)-len(valid),
             "conditional_modeled_profit_usd":str(profit.quantize(MONEY)),
+            "conditional_wins":wins,"conditional_losses":losses,
             "warning":"Not an estimate of realized or achievable profit. Selection bias, unfilled orders, slippage, FX and unverified payout timelines can invalidate results.",
             "results":results}
 
