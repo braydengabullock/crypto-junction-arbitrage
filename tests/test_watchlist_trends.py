@@ -32,6 +32,18 @@ class TrendTests(unittest.TestCase):
   self.assertEqual(improving["monitoring_priority_counts"]["APPROACHING_BREAK_EVEN"],1)
   worsening=compare({"watchlist":[row("-0.10")]},{"watchlist":[row("-0.20")]})
   self.assertEqual(worsening["monitoring_priority_counts"]["APPROACHING_BREAK_EVEN"],0)
+ def test_quote_quality_fail_closed(self):
+  def row(quality):
+   return {"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12",
+           "illustrative_net_usd":"-0.2","contracts_each":10,
+           "fixed_ten_contract_pairs":{"contracts_each":10,"hypothetical_net_usd":"-0.2"},
+           "quote_quality":quality}
+  bad=compare({"watchlist":[row({})]},{"watchlist":[row({})]})
+  self.assertFalse(bad["changes"][0]["quote_quality_passed"])
+  self.assertEqual(bad["changes"][0]["monitoring_priority"],"MONITOR_ONLY")
+  good={"both_books_present":True,"within_20_seconds":True,"sufficient_depth_for_ten":True}
+  result=compare({"watchlist":[row(good)]},{"watchlist":[row(good)]})
+  self.assertTrue(result["changes"][0]["quote_quality_passed"])
  def test_changed_quantity_not_claimed_as_price_trend(self):
   old={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-1","contracts_each":10}]}
   new={"watchlist":[{"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12","illustrative_net_usd":"-0.5","contracts_each":5}]}
