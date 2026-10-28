@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from urllib.error import HTTPError, URLError
+from datetime import datetime, timezone
 from orderbook_research import fetch_kalshi_book, fetch_polymarket_book
 from candidate_orderbooks import parse_tokens
 from orderbook_research import kalshi_buy_levels, polymarket_buy_levels
@@ -15,6 +16,7 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
     if not isinstance(kalshi,list): kalshi=[]
     if not isinstance(poly,list): poly=[]
     report={"research_only":True,"event":evidence.get("event"),
+            "captured_at":datetime.now(timezone.utc).isoformat(),
             "event_api_errors":evidence.get("errors",[]),
             "both_event_apis_returned":bool(k and p),
             "status":"NEEDS_MANUAL_RULE_AND_OUTCOME_REVIEW",
@@ -72,6 +74,8 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
     else:
         report["status"]="BOOK_PROBE_ONLY_RULES_UNVERIFIED"
     report["price_evidence"]="CLOB order-book asks required for executable costing; Gamma outcomePrices, if present, are indicative only."
+    report["clob_access_diagnosis"]="HTTP 403 indicates access refused; not evidence of empty order books. Do not use alternative networks, identities or endpoints to evade an access restriction."
+    report["requires_manual_followup"]=["Check legitimate CLOB public access through official support/documentation","Verify settlement and postponement differences","Verify fee and FX schedules before net ROI"]
     report["paper_net_roi_calculable"]=False
     report["warning"]="No verified fee-adjusted net ROI or tradable arbitrage. If CLOB HTTP 403 persists, do not bypass access restrictions."
     return report
