@@ -12,8 +12,11 @@ from pathlib import Path
 
 STOP = {"will","the","a","an","at","on","of","in","to","by","before","after",
         "for","be","is","and","or","yes","no","does","that","this","market",
-        "price","above","below"}
+        "price","above","below","vs","versus","against","beat","defeat",
+        "wins","win","winner","game","match","team","teams"}
 TOKEN = re.compile(r"[a-z0-9]+")
+ALIASES = {"ny":"new york","la":"los angeles","sf":"san francisco",
+           "nyc":"new york city","utd":"united"}
 SPORT_TERMS = {"nba","nfl","nhl","mlb","wnba","soccer","football","basketball","hockey","baseball","tennis","match","game","win","winner","beat","defeat"}
 
 def candidate_words(market, *, kalshi=False):
@@ -31,7 +34,10 @@ def candidate_score(left, right):
     return max(jaccard,containment*0.80) if intersect >= 2 else jaccard
 
 def tokenize(text):
-    return set(TOKEN.findall(str(text).lower())) - STOP
+    raw = str(text).lower()
+    raw = re.sub(r"\\b(" + "|".join(re.escape(k) for k in ALIASES) + r")\\b",
+                 lambda match: ALIASES[match.group(0)], raw)
+    return set(TOKEN.findall(raw)) - STOP
 
 def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
     if not 0 <= threshold <= 1 or max_results < 1:
@@ -79,6 +85,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                     "title_similarity":round(score,3),
                     "match_method":"title_subtitle_token_containment_research",
                     "sports_candidate":bool((words | other_words) & SPORT_TERMS),
+                    "shared_event_terms":sorted(words & other_words),
+                    "kalshi_subtitle":market.get("subtitle"),
                     "market_rules_verified":False,
                     "price_comparison_verified":False,
                     "tradable":False,
