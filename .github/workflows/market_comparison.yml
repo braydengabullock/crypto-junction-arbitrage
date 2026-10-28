@@ -20,6 +20,8 @@ jobs:
         run: python one_event_discovery.py
       - name: Probe event contract books (read only)
         run: python one_event_book_probe.py
+      - name: Build opposing research pair combinations
+        run: python one_event_pair_combinations.py
       - name: Capture Kalshi public market metadata
         run: python capture_kalshi.py --limit 100 --max-pages 10
       - name: Capture Polymarket public market metadata
@@ -63,6 +65,7 @@ jobs:
                 "displayed_depth_on_both_venues", "api_errors")),
               ("preflight_report.json", ("observation_usable", "issues")),
               ("one_event_book_probe.json", ("status", "both_event_apis_returned", "rule_equivalence_verified")),
+              ("one_event_pair_combinations.json", ("status", "net_roi_verified")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -105,5 +108,6 @@ jobs:
             preflight_report.json
             one_event_discovery.json
             one_event_book_probe.json
+            one_event_pair_combinations.json
           retention-days: 14
           if-no-files-found: warn
