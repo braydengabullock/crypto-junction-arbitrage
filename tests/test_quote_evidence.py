@@ -21,6 +21,21 @@ class QuoteEvidenceTests(unittest.TestCase):
         self.assertTrue(q["within_20_seconds"])
         self.assertTrue(q["sufficient_depth_for_ten"])
         self.assertEqual(q["max_observation_span_seconds"],3)
+    def test_raw_spread_and_friction_reconcile(self):
+          from decimal import Decimal
+          result=self.run_screen(self.data)
+          fixed=result["near_misses"][0]["fixed_ten_contract_pairs"]
+          self.assertIsNotNone(fixed)
+          raw=Decimal(fixed["raw_displayed_spread_usd"])
+          friction=Decimal(fixed["modeled_total_friction_usd"])
+          net=Decimal(fixed["hypothetical_net_usd"])
+          self.assertEqual(raw-friction,net)
+          self.assertEqual(friction,Decimal(fixed["modeled_kalshi_fee_usd"])+
+                           Decimal(fixed["modeled_polymarket_fee_usd"])+
+                           Decimal(fixed["assumed_extra_cost_usd"]))
+          self.assertEqual(Decimal("10")-Decimal(fixed["displayed_kalshi_cost_usd"])-
+                           Decimal(fixed["displayed_polymarket_cost_usd"]),raw)
+
     def test_stale_pair_is_not_fresh(self):
         data=copy.deepcopy(self.data)
         data["rows"][0]["observations"][1]["observed_at"]="2026-10-28T10:00:30+00:00"
