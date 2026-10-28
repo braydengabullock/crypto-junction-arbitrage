@@ -11,18 +11,19 @@ def _date(value):
 
 def review(kalshi_book, polymarket_book, *, kalshi_side, observed_kalshi,
            observed_polymarket, fee_kalshi=None, fee_polymarket=None,
-           budget="100", max_lag_seconds=20):
+           budget="100", max_lag_seconds=20, other_cost_usd=None):
     """Caller supplies opposite outcome Polymarket token; equivalence is NOT verified."""
     result={"status":"RESEARCH_ONLY","validated_opportunity":False,
             "trade_allowed":False,"reasons":[],"scenarios":[]}
     try:
         if kalshi_side not in ("YES","NO"):
             raise ValueError("Invalid Kalshi side")
-        if fee_kalshi is None or fee_polymarket is None:
-            raise ValueError("Explicit per-contract fees required")
+        if fee_kalshi is None or fee_polymarket is None or other_cost_usd is None:
+            raise ValueError("Explicit per-contract fees and total other costs (FX/funding/slippage) required")
         fk,fp=Decimal(str(fee_kalshi)),Decimal(str(fee_polymarket))
+        extra=Decimal(str(other_cost_usd))
         cap=Decimal(str(budget))
-        if any(not x.is_finite() or x<0 for x in (fk,fp,cap)) or cap>100:
+        if any(not x.is_finite() or x<0 for x in (fk,fp,cap,extra)) or cap>100:
             raise ValueError("Invalid fees or $100 ceiling")
         if abs((_date(observed_kalshi)-_date(observed_polymarket)).total_seconds())>max_lag_seconds:
             raise ValueError("Non-synchronized observations")
@@ -34,17 +35,18 @@ def review(kalshi_book, polymarket_book, *, kalshi_side, observed_kalshi,
             kc,pc=depth_cost(k,n),depth_cost(p,n)
             if not kc["depth_sufficient"] or not pc["depth_sufficient"]:
                 break
-            total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+n*(fk+fp)
+            total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+n*(fk+fp)+extra
             if total>cap:
                 break
             if total>0:
                 gain=Decimal(n)-total
                 roi=gain/total*100
-                if roi>=2:
+                if gain>0:
                     result["scenarios"].append({
                         "contracts_each":n,"displayed_cost_usd":str(total),
                         "hypothetical_net_usd":str(gain),
-                        "hypothetical_roi_pct":str(roi.quantize(Decimal("0.001")))})
+                        "hypothetical_roi_pct":str(roi.quantize(Decimal("0.001"))),
+                        "priority":"0.5_PERCENT_PLUS" if roi>=Decimal("0.5") else "SMALL_POSITIVE"})
     except (ValueError,ArithmeticError,TypeError,KeyError) as exc:
         result["reasons"].append(str(exc))
     result["reasons"]+= [
