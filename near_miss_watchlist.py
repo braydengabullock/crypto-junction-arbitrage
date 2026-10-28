@@ -14,7 +14,7 @@ def rank(report, limit=10):
             gain=Decimal(str(scenario["hypothetical_net_usd"]))
             cost=Decimal(str(scenario["total_cost_usd"]))
             quantity=int(scenario["contracts_each"])
-            if not gain.is_finite() or not cost.is_finite() or cost<=0 or quantity<1 or cost>100: continue
+            if not gain.is_finite() or not cost.is_finite() or cost<=0 or quantity<1 or cost>5000: continue
             gap=max(-gain+Decimal("0.01"),Decimal("0"))
         except (KeyError,ValueError,TypeError,InvalidOperation): continue
         fixed=item.get("fixed_ten_contract_pairs") or {}
