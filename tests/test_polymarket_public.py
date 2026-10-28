@@ -20,7 +20,7 @@ class PolymarketPublicTests(unittest.TestCase):
             self.assertEqual(params["active"],["true"])
             self.assertEqual(params["closed"],["false"])
             self.assertEqual(timeout,20)
-            return Response([{"id":"1","question":"Test","outcomePrices":"[\\"0.5\\",\\"0.5\\"]"}])
+            return Response([{"id":"1","question":"Test","outcomePrices":json.dumps(["0.5","0.5"])}])
         markets,page=fetch_markets(limit=10,opener=opener)
         data=snapshot(markets,page)
         self.assertTrue(data["research_only"])
