@@ -28,7 +28,7 @@ class TrendTests(unittest.TestCase):
    return {"kalshi_ticker":"K","kalshi_side":"YES","polymarket_token_id":"12",
      "illustrative_net_usd":value,"contracts_each":10,
      "fixed_ten_contract_pairs":{"contracts_each":10,"hypothetical_net_usd":value}}
-  improving=compare({"watchlist":[row("-0.30")]},{"watchlist":[row("-0.20")]})
+  improving=compare({"watchlist":[dict(row("-0.30"),quote_quality={"both_books_present":True,"within_20_seconds":True,"sufficient_depth_for_ten":True})]},{"watchlist":[dict(row("-0.20"),quote_quality={"both_books_present":True,"within_20_seconds":True,"sufficient_depth_for_ten":True})]})
   self.assertEqual(improving["monitoring_priority_counts"]["APPROACHING_BREAK_EVEN"],1)
   worsening=compare({"watchlist":[row("-0.10")]},{"watchlist":[row("-0.20")]})
   self.assertEqual(worsening["monitoring_priority_counts"]["APPROACHING_BREAK_EVEN"],0)
