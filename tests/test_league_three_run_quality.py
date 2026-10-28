@@ -12,6 +12,20 @@ class ThreeRunQualityTests(unittest.TestCase):
         self.assertTrue(row["three_run_improvement_observed"])
         self.assertEqual(row["pass_rates_pct_by_run"],[25.0,50.0,75.0])
         self.assertFalse(x["trade_allowed"])
+    def test_raw_spread_presence_is_separate_from_quote_quality(self):
+        a=sample(4,1)
+        b=sample(4,2)
+        c=sample(4,3)
+        for snapshot in (a,b,c):
+            snapshot["by_league"]["NBA"]["positive_raw_spread_pairs"]=1
+        row=assess(a,b,c)["by_league"]["NBA"]
+        self.assertTrue(row["three_run_improvement_observed"])
+        self.assertTrue(row["positive_raw_spread_in_every_run"])
+        c["by_league"]["NBA"]["positive_raw_spread_pairs"]=0
+        row=assess(a,b,c)["by_league"]["NBA"]
+        self.assertFalse(row["positive_raw_spread_in_every_run"])
+        self.assertTrue(row["three_run_improvement_observed"])
+
     def test_small_samples_cannot_pass(self):
         x=assess(sample(2,0),sample(2,1),sample(2,2))
         self.assertEqual(x["by_league"]["NBA"]["status"],"INSUFFICIENT_SAMPLES")
