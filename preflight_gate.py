@@ -28,6 +28,13 @@ def assess(matches, books, quality, report):
         issues.append("No synchronized cross-exchange books")
     if quality.get("rows_with_displayed_depth_on_both_venues",0)==0:
         issues.append("No displayed depth on both venues")
+    details=quality.get("details",[])
+    if not isinstance(details,list) or len(details)!=n:
+        issues.append("Missing per-candidate quality evidence")
+    elif not any(item.get("both_books") and item.get("synchronized")
+                 and item.get("displayed_depth_on_both") and not item.get("issues")
+                 for item in details if isinstance(item,dict)):
+        issues.append("No single candidate has synchronized, usable books on both venues")
     return {"gate":"OBSERVATION_DIAGNOSTIC","data_sufficient_for_paper_backtest":False,
             "observation_usable":not issues,
             "issues":issues,
