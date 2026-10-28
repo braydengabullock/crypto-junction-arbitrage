@@ -15,9 +15,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Capture Kalshi public market metadata
-        run: python capture_kalshi.py --limit 100 --max-pages 5
+        run: python capture_kalshi.py --limit 100 --max-pages 10
       - name: Capture Polymarket public market metadata
-        run: python polymarket_public.py --limit 100 --max-pages 5
+        run: python polymarket_public.py --limit 100 --max-pages 10
       - name: Find titles requiring human resolution-rule review
         run: |
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
