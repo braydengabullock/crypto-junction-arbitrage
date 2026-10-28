@@ -9,6 +9,8 @@ class LeagueQuoteQualityTrendTests(unittest.TestCase):
         self.assertEqual(row["previous_pass_rate_pct"],50.0)
         self.assertEqual(row["current_pass_rate_pct"],80.0)
         self.assertEqual(row["change_percentage_points"],30.0)
+        self.assertEqual(row["sample_change_pct"],25.0)
+        self.assertEqual(row["interpretation"],"DESCRIPTIVE_ONLY_NOT_STABLE_TREND")
         self.assertEqual(row["status"],"COMPARABLE_RESEARCH")
     def test_zero_denominators_are_not_improvements(self):
         row=compare({"by_league":{}},{"by_league":{"NHL":{"pairs":2,"quality_screen_passed_pairs":1}}})["by_league"]["NHL"]
