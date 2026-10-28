@@ -7,6 +7,19 @@ import re
 from pathlib import Path
 from one_event_outcome_pairs import outcomes
 
+NBA_TEAMS={
+ "ATL":("Atlanta","Hawks"),"BOS":("Boston","Celtics"),"BKN":("Brooklyn","Nets"),
+ "CHA":("Charlotte","Hornets"),"CHI":("Chicago","Bulls"),"CLE":("Cleveland","Cavaliers"),
+ "DAL":("Dallas","Mavericks"),"DEN":("Denver","Nuggets"),"DET":("Detroit","Pistons"),
+ "GSW":("Golden State","Warriors"),"HOU":("Houston","Rockets"),"IND":("Indiana","Pacers"),
+ "LAC":("Los Angeles C","Clippers"),"LAL":("Los Angeles L","Lakers"),
+ "MEM":("Memphis","Grizzlies"),"MIA":("Miami","Heat"),"MIL":("Milwaukee","Bucks"),
+ "MIN":("Minnesota","Timberwolves"),"NOP":("New Orleans","Pelicans"),
+ "NYK":("New York","Knicks"),"OKC":("Oklahoma City","Thunder"),
+ "ORL":("Orlando","Magic"),"PHI":("Philadelphia","76ers"),"PHX":("Phoenix","Suns"),
+ "POR":("Portland","Trail Blazers"),"SAC":("Sacramento","Kings"),
+ "SAS":("San Antonio","Spurs"),"TOR":("Toronto","Raptors"),
+ "UTA":("Utah","Jazz"),"WAS":("Washington","Wizards")}
 def normalize(value):
     return re.sub(r"[^a-z0-9]+"," ",str(value).casefold()).strip()
 
@@ -28,6 +41,7 @@ def make_mapping(matches):
         code_to_row={c["kalshi_ticker"][-3:]:c for c in cs}
         if len(code_to_row)!=2 or len(cs)!=2: continue
         codes=set(code_to_row)
+        if not event.startswith("KXNBAGAME-") or any(code not in NBA_TEAMS for code in codes): continue
         # Official market outcome labels and token IDs must be retained from
         # snapshot; a title-only match cannot identify the correct token.
         labels=outcomes(cs[0].get("polymarket_outcomes"))
@@ -37,14 +51,13 @@ def make_mapping(matches):
         for code,row in code_to_row.items():
             title=normalize(row.get("kalshi_title",""))
             subtitle=normalize(row.get("kalshi_subtitle",""))
-            options=[]
-            for i,label in enumerate(labels):
-                name=normalize(label)
-                if not name or len(name)<4: continue
-                # Require the full outcome label to appear as a word sequence
-                # in a Kalshi winner-specific title/subtitle; reject ambiguity.
-                if re.search(r"(?<![a-z0-9])"+re.escape(name)+r"(?![a-z0-9])",title+" "+subtitle):
-                    options.append(i)
+            city,nickname=NBA_TEAMS[code]
+            # Require exact known NBA city in Kalshi winner title and exact
+            # NBA nickname or full team name in Polymarket outcome label.
+            if not re.search(r"(?<![a-z0-9])"+re.escape(normalize(city))+r"(?![a-z0-9])",title+" "+subtitle):
+                break
+            options=[i for i,label in enumerate(labels) if normalize(label) in
+                     (normalize(nickname),normalize(city+" "+nickname))]
             if len(options)!=1: break
             assignments[code]=options[0]
         if len(assignments)!=2 or len(set(assignments.values()))!=2: continue
