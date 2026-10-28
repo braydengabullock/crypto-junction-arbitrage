@@ -47,7 +47,8 @@ def inspect(snapshot, *, opener=urlopen, sports_token=None):
         result["access_conclusion"]="BOOK_PUBLIC_READ_ACCESSIBLE"
     else:
         result["access_conclusion"]="UNDETERMINED"
-    if sports_token is not None and str(sports_token).isdigit():
+    result["sports_probe_attempted"]=sports_token is not None and str(sports_token).isdigit()
+    if result["sports_probe_attempted"]:
         url="https://clob.polymarket.com/book?"+urlencode({"token_id":str(sports_token)})
         req=Request(url,headers={"Accept":"application/json","User-Agent":"CryptoJunctionResearch/1.0"})
         entry={"endpoint":"book","token_id":str(sports_token),"http_status":None,"response_kind":None}
@@ -64,6 +65,8 @@ def inspect(snapshot, *, opener=urlopen, sports_token=None):
         result["sports_token_probe"]=entry
         if result["requests"][0]["http_status"]==200 and entry["http_status"]==403:
             result["access_conclusion"]="CONTROL_ACCESSIBLE_SPORTS_TOKEN_REFUSED"
+    if not result["sports_probe_attempted"]:
+        result["access_conclusion"]="SPORTS_PROBE_NOT_ATTEMPTED"
     return result
 
 if __name__=="__main__":
@@ -82,4 +85,6 @@ if __name__=="__main__":
     out=inspect(json.loads(files[-1].read_text(encoding="utf-8")),sports_token=sport_token)
     Path("clob_access_diagnostic.json").write_text(json.dumps(out,indent=2),encoding="utf-8")
     print(json.dumps({"conclusion":out["access_conclusion"],"requests":out["requests"],
+                      "sports_probe":out.get("sports_token_probe"),
+                      "sports_probe_attempted":out.get("sports_probe_attempted"),
                       "research_only":True}))
