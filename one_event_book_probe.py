@@ -49,7 +49,9 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
             "outcomes":market.get("outcomes"),"clobTokenIds":tokens,
             "enableOrderBook":market.get("enableOrderBook"),
             "acceptingOrders":market.get("acceptingOrders"),
-            "description":market.get("description")})
+            "description":market.get("description"),
+            "indicative_outcome_prices":market.get("outcomePrices"),
+            "indicative_only_not_executable":True})
         if market.get("enableOrderBook") is False: continue
         for token in tokens[:2]:
             try:
@@ -69,7 +71,9 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
         report["status"]="NO_POLYMARKET_PUBLIC_ORDERBOOKS_RETURNED"
     else:
         report["status"]="BOOK_PROBE_ONLY_RULES_UNVERIFIED"
-    report["warning"]="A returned book is not a verified cross-venue pair. No fee assumptions, paper ROI, or trading signal."
+    report["price_evidence"]="CLOB order-book asks required for executable costing; Gamma outcomePrices, if present, are indicative only."
+    report["paper_net_roi_calculable"]=False
+    report["warning"]="No verified fee-adjusted net ROI or tradable arbitrage. If CLOB HTTP 403 persists, do not bypass access restrictions."
     return report
 
 def main():
