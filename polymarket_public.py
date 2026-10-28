@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 BASE = "https://gamma-api.polymarket.com/markets"
 
@@ -36,8 +37,12 @@ def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
             request = Request(BASE + "?" + query,
                               headers={"Accept":"application/json",
                                        "User-Agent":"CJ-Arbitrage-Research/0.1"})
-            with opener(request, timeout=20) as response:
-                records = json.load(response)
+            try:
+                with opener(request, timeout=20) as response:
+                    records = json.load(response)
+            except HTTPError as exc:
+                raise ValueError(f"Polymarket market discovery HTTP {exc.code}; "
+                                 f"order={order}, page={page}, offset={page*limit}") from exc
             if not isinstance(records,list):
                 raise ValueError("Unexpected Polymarket market response")
             visited += 1
