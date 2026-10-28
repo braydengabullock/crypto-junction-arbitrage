@@ -50,6 +50,8 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         if closest is None or profit>Decimal(closest["hypothetical_net_usd"]):
                             closest={"contracts_each":n,"total_cost_usd":str(total),
                                      "hypothetical_net_usd":str(profit),
+                                     "minimum_total_cost_reduction_to_positive_usd":str((-profit if profit<0 else Decimal("0"))+Decimal("0.01")) if profit<=0 else "0",
+                                     "minimum_reduction_per_contract_pair_usd":str((((-profit if profit<0 else Decimal("0"))+Decimal("0.01"))/n).quantize(Decimal("0.00001"))) if profit<=0 else "0",
                                      "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
                         if profit>0 and (best is None or profit>Decimal(best["hypothetical_net_usd"])):
                             best={"contracts_each":n,"total_cost_usd":str(total),
