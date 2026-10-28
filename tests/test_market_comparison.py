@@ -56,6 +56,19 @@ class ComparisonTests(unittest.TestCase):
         k={"markets":[{"ticker":"KXNBA-ONE","title":"Boston Celtics vs New York Knicks"}]}
         p={"markets":[{"id":"P","question":"Will Boston Celtics beat New York Knicks?"}]}
         self.assertEqual(compare(k,p)[1],1)
+    def test_disabled_polymarket_book_cannot_be_sampled(self):
+        a={"markets":[{"ticker":"K","title":"Bitcoin exceeds 100000 in 2027"}]}
+        b={"markets":[{"id":"P","question":"Bitcoin exceeds 100000 in 2027",
+                       "enableOrderBook":False,"acceptingOrders":False}]}
+        self.assertEqual(compare(a,b)[1],0)
+    def test_enabled_book_is_still_unverified(self):
+        a={"markets":[{"ticker":"K","title":"Bitcoin exceeds 100000 in 2027"}]}
+        b={"markets":[{"id":"P","question":"Bitcoin exceeds 100000 in 2027",
+                       "enableOrderBook":True,"acceptingOrders":True}]}
+        matches,count=compare(a,b)
+        self.assertEqual(count,1)
+        self.assertTrue(matches[0]["polymarket_orderbook_enabled"])
+        self.assertFalse(matches[0]["market_rules_verified"])
     def test_unrelated(self):
         a={"markets":[{"ticker":"A","title":"Bitcoin halving next year"}]}
         b={"markets":[{"id":"B","question":"Oscar best picture winner"}]}
