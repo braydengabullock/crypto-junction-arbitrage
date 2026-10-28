@@ -58,6 +58,23 @@ class DiscoveryFunnelTests(unittest.TestCase):
         self.assertEqual(mapped["by_league"]["NBA"]["identifier_coverage_pct_of_discovered_sides"],100.0)
         self.assertEqual(mapped["verified_opportunities"],0)
 
+    def test_research_priorities_rank_actual_coverage_losses(self):
+        n1="KXNBAGAME-26OCT28OKCDAL-OKC"
+        n2="KXNBAGAME-26OCT28OKCDAL-DAL"
+        h1="KXNHLGAME-26OCT28BOSTOR-BOS"
+        k={"markets":[{"ticker":n1},{"ticker":n2},{"ticker":h1}]}
+        matches={"candidate_limit":500,"candidates":[
+            {"kalshi_ticker":n1,"match_method":"sports_identifier_date_teams_research"}]}
+        r=funnel(k,{"markets":[]},matches,{"opposing_token_map":{}})
+        self.assertEqual(r["research_priorities"],[
+            {"league":"NBA","stage":"IDENTIFIER_MATCHING","missing_sides":1,
+             "note":"Research coverage only; not a verified executable opportunity"},
+            {"league":"NBA","stage":"TOKEN_MAPPING","missing_sides":1,
+             "note":"Research coverage only; not a verified executable opportunity"},
+            {"league":"NHL","stage":"IDENTIFIER_MATCHING","missing_sides":1,
+             "note":"Research coverage only; not a verified executable opportunity"}])
+        self.assertEqual(r["verified_opportunities"],0)
+
     def test_warning_reflects_actual_cap_and_incomplete_collection(self):
         r=funnel({"markets":[]},{"markets":[],"data_quality":{"pagination":{"complete":False}}},
                  {"candidate_limit":2,"candidates":[{},{}]},{"opposing_token_map":{}})
