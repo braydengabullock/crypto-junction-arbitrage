@@ -161,10 +161,11 @@ def main():
     parser.add_argument("--polymarket",required=True)
     parser.add_argument("--output",default="research_matches.json")
     parser.add_argument("--threshold",type=float,default=0.55)
+    parser.add_argument("--max-results",type=int,default=500)
     args=parser.parse_args()
     k=read_snapshot(args.kalshi,"kalshi_public")
     p=read_snapshot(args.polymarket,"polymarket_gamma_public")
-    matches,count=compare(k,p,threshold=args.threshold)
+    matches,count=compare(k,p,threshold=args.threshold,max_results=args.max_results)
     result={
         "source":"kalshi_polymarket_title_research",
         "created_at":datetime.now(timezone.utc).isoformat(),
