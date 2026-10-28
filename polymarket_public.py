@@ -18,7 +18,8 @@ def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
     markets = []
     for page in range(max_pages):
         query = urlencode({"active":"true","closed":"false",
-                           "limit":limit,"offset":page*limit})
+                           "limit":limit,"offset":page*limit,
+                           "order":"volume24hr","ascending":"false"})
         request = Request(BASE + "?" + query,
                           headers={"Accept":"application/json",
                                    "User-Agent":"CJ-Arbitrage-Research/0.1"})
@@ -28,8 +29,8 @@ def fetch_markets(*, limit=100, max_pages=5, opener=urlopen):
             raise ValueError("Unexpected Polymarket market response")
         markets.extend(records)
         if len(records) < limit:
-            return markets, {"complete":True,"pages_fetched":page+1}
-    return markets, {"complete":False,"pages_fetched":max_pages}
+            return markets, {"complete":True,"pages_fetched":page+1,"sort":"volume24hr_desc"
+    return markets, {"complete":False,"pages_fetched":max_pages,"sort":"volume24hr_desc"
 
 def snapshot(markets, pagination, *, now=None):
     return {
