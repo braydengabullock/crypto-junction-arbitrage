@@ -208,14 +208,17 @@ jobs:
           try:
               economics = json.loads(Path("opportunity_economics.json").read_text(encoding="utf-8"))
               lines.extend(["", "### Pricing and quote quality by league (fixed-ten research)",
-                            "| League | Priced | Quote screen passed | Quote unverified | Raw spread nonpositive | Friction erased |",
-                            "|---|---:|---:|---:|---:|---:|"])
+                            "| League | Priced | Quote screen passed | Pass rate | Quote unverified | Raw spread nonpositive | Friction erased |",
+                            "|---|---:|---:|---:|---:|---:|---:|"])
               for league, row in economics.get("by_league", {}).items():
-                  lines.append("| " + str(league) + " | " + " | ".join(
-                      str(row.get(field, 0)) for field in (
-                          "pairs", "quality_screen_passed_pairs",
-                          "quality_screen_unverified_pairs",
-                          "nonpositive_raw_spread_pairs", "friction_erased_pairs")) + " |")
+                  rate = row.get("quote_quality_pass_rate_pct")
+                  lines.append("| " + str(league) + " | " +
+                               str(row.get("pairs", 0)) + " | " +
+                               str(row.get("quality_screen_passed_pairs", 0)) + " | " +
+                               (str(rate) + "%" if rate is not None else "n/a") + " | " +
+                               " | ".join(str(row.get(field, 0)) for field in (
+                                   "quality_screen_unverified_pairs",
+                                   "nonpositive_raw_spread_pairs", "friction_erased_pairs")) + " |")
               lines.append("Only priced fixed-ten observations are counted; missing/depth-limited quotes are not included. Quality screens do not verify execution or settlement.")
           except (OSError, ValueError, TypeError) as exc:
               lines.append("Pricing and quote quality summary unavailable (" + type(exc).__name__ + ").")
