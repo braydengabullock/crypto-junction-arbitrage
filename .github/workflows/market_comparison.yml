@@ -102,7 +102,9 @@ jobs:
             echo "Insufficient saved history; three-run comparison skipped."
           fi
       - name: Generate unverified settlement rule review records
-        run: python settlement_rule_review.py --mapping opposing_token_map.json --output settlement_rule_review.json
+        run: |
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python settlement_rule_review.py --mapping opposing_token_map.json --kalshi kalshi_sports_snapshot.json --polymarket "$P" --output settlement_rule_review.json
       - name: Audit public orderbook evidence quality
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
@@ -138,7 +140,7 @@ jobs:
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("watchlist_trends.json", ("comparable_pairs",)),
-              ("settlement_rule_review.json", ("verified_pairs", "rule_equivalence_verified")),
+              ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
