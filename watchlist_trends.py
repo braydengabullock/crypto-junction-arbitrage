@@ -26,7 +26,10 @@ def compare(previous,current):
         old_fixed=prior[2] if prior is not None else None
         benchmark_comparable=(old_fixed is not None and new_fixed is not None)
         same_size=old_qty==new_qty and new_qty>0 if prior is not None else False
-        changes.append({"kalshi_ticker":key[0],"kalshi_side":key[1],
+        priority=("APPROACHING_BREAK_EVEN" if benchmark_comparable and new_fixed>old_fixed and new_fixed<0 and new_fixed>=Decimal("-0.25") else
+                  "POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION" if new_fixed is not None and new_fixed>0 else
+                  "MONITOR_ONLY")
+        changes.append({"monitoring_priority":priority,"kalshi_ticker":key[0],"kalshi_side":key[1],
             "polymarket_token_id":key[2],"previous_net_usd":str(old_profit) if prior is not None else None,
             "current_net_usd":str(new_profit),
             "previous_contracts_each":old_qty,"current_contracts_each":new_qty,
@@ -39,9 +42,11 @@ def compare(previous,current):
             "trend":"NEW" if prior is None else "SIZE_CHANGED_NOT_COMPARABLE" if not same_size else ("IMPROVING" if new_profit>old_profit else "WORSENING" if new_profit<old_profit else "UNCHANGED"),
             "research_only":True})
     counts={name:sum(x["trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","NEW","SIZE_CHANGED_NOT_COMPARABLE")}
+    priority_counts={name:sum(x["monitoring_priority"]==name for x in changes) for name in ("APPROACHING_BREAK_EVEN","POSITIVE_ILLUSTRATIVE_REQUIRES_VERIFICATION","MONITOR_ONLY")}
     benchmark_counts={name:sum(x["fixed_ten_trend"]==name for x in changes) for name in ("IMPROVING","WORSENING","UNCHANGED","UNAVAILABLE")}
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
             "fixed_ten_trend_counts":benchmark_counts,
+            "monitoring_priority_counts":priority_counts,
             "trend_counts":counts,
             "comparable_pairs":sum(x["change_usd"] is not None for x in changes),
             "changes":changes,"warning":"Sequential snapshots are not simultaneous executable quotes."}
@@ -57,4 +62,5 @@ if __name__=="__main__":
     Path(args.output).write_text(json.dumps(out,indent=2))
     print(json.dumps({"comparable_pairs":out["comparable_pairs"],"pairs_seen":len(out["changes"]),
                       "trend_counts":out["trend_counts"],
-                      "fixed_ten_trend_counts":out["fixed_ten_trend_counts"]}))
+                      "fixed_ten_trend_counts":out["fixed_ten_trend_counts"],
+                      "monitoring_priority_counts":out["monitoring_priority_counts"]}))
