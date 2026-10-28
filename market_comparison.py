@@ -90,10 +90,6 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
         raise ValueError("Invalid matching threshold or result cap")
     index=defaultdict(list)
     p_markets=polymarket["markets"]
-    by_sport_slug=defaultdict(list)
-    for ix,pm in enumerate(p_markets):
-        if eligible_for_simple_match(pm) and pm.get("enableOrderBook") is not False and pm.get("acceptingOrders") is not False:
-            by_sport_slug[str(pm.get("slug") or "").lower()].append(ix)
     for ix, market in enumerate(p_markets):
         if not eligible_for_simple_match(market): continue
         if market.get("enableOrderBook") is False or market.get("acceptingOrders") is False: continue
@@ -110,7 +106,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
         for word in words:
             ids.update(index[word])
         for ix,other in enumerate(p_markets):
-            if sports_identifier_match(market,other): ids.add(ix)
+            if eligible_for_simple_match(other) and other.get("enableOrderBook") is not False and other.get("acceptingOrders") is not False and sports_identifier_match(market,other):
+                ids.add(ix)
         for ix in ids:
             other=p_markets[ix]
             other_words=candidate_words(other)
