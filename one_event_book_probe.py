@@ -14,6 +14,8 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
     if not isinstance(kalshi,list): kalshi=[]
     if not isinstance(poly,list): poly=[]
     report={"research_only":True,"event":evidence.get("event"),
+            "event_api_errors":evidence.get("errors",[]),
+            "both_event_apis_returned":bool(k and p),
             "status":"NEEDS_MANUAL_RULE_AND_OUTCOME_REVIEW",
             "rule_equivalence_verified":False,"tradable":False,
             "kalshi_contracts":[],"polymarket_contracts":[],
@@ -54,6 +56,12 @@ def inspect(evidence, *, fetch_k=fetch_kalshi_book, fetch_p=fetch_polymarket_boo
             except (ValueError,HTTPError,URLError,TimeoutError) as e:
                 report["errors"].append({"venue":"polymarket","token_id":token,
                     "kind":type(e).__name__,"http_status":getattr(e,"code",None)})
+    if not (k and p):
+        report["status"]="EVENT_DISCOVERY_INCOMPLETE"
+    elif not report["book_probes"]:
+        report["status"]="NO_PUBLIC_ORDERBOOKS_RETURNED"
+    else:
+        report["status"]="BOOK_PROBE_ONLY_RULES_UNVERIFIED"
     report["warning"]="A returned book is not a verified cross-venue pair. No fee assumptions, paper ROI, or trading signal."
     return report
 
