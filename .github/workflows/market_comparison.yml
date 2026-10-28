@@ -60,7 +60,7 @@ jobs:
       - name: Screen displayed depth with explicit fee input gate
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
       - name: Illustrative NBA fee-and-buffer sensitivity (mapped outcome candidates, not verified rules)
-        run: python depth_fee_screen.py --books candidate_orderbooks.json --opposing-token-map opposing_token_map.json --poly-rate 0.05 --kalshi-multiplier 1 --extra-cost 0.25 --output depth_fee_illustrative.json
+        run: python depth_fee_screen.py --books candidate_orderbooks.json --opposing-token-map opposing_token_map.json --poly-rate 0.05 --kalshi-multiplier 1 --extra-cost 0.25 --budget 5000 --output depth_fee_illustrative.json
       - name: Diagnose raw spread versus modeled friction
         run: python opportunity_economics.py --input depth_fee_illustrative.json --output opportunity_economics.json
       - name: Rank closest fee-adjusted research watchlist
@@ -306,7 +306,7 @@ jobs:
                             "- Small positive (above 0%, below 0.5%): " + str(tiers["SMALL_POSITIVE"]),
                             "- Higher priority (0.5% to below 2%): " + str(tiers["HIGHER_PRIORITY_0_5_PLUS"]),
                             "- Exceptional (2% or greater): " + str(tiers["EXCEPTIONAL_2_PLUS"]),
-                            "- $100 maximum modeled combined stake; all fees and currency costs require verification."])
+                            "- $5,000 maximum modeled combined research stake; size constrained by both order books; all fees, FX costs and trading eligibility require independent verification."])
           except (OSError, ValueError, TypeError):
               lines.append("Positive-net ROI tier counts unavailable.")
           try:
