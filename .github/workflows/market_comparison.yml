@@ -52,6 +52,8 @@ jobs:
         run: python candidate_orderbooks.py --matches research_matches.json --max-pairs 5 --output candidate_orderbooks.json
       - name: Screen displayed depth with explicit fee input gate
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
+      - name: Illustrative NBA fee-and-buffer sensitivity (not verified fees)
+        run: python depth_fee_screen.py --books candidate_orderbooks.json --poly-rate 0.05 --kalshi-multiplier 1 --extra-cost 0.25 --output depth_fee_illustrative.json
       - name: Audit public orderbook evidence quality
         run: python orderbook_quality.py --input candidate_orderbooks.json --output orderbook_quality.json
       - name: Summarize evidence readiness
@@ -85,6 +87,7 @@ jobs:
               ("indicative_candidate_screen.json", ("status", "candidate_outcomes")),
               ("clob_access_diagnostic.json", ("access_conclusion", "requests")),
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
+              ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -126,6 +129,7 @@ jobs:
             readiness_report.json
             candidate_orderbooks.json
             depth_fee_screen.json
+            depth_fee_illustrative.json
             orderbook_quality.json
             phase1_real_data_report.json
             preflight_report.json
