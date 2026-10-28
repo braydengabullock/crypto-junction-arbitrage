@@ -24,6 +24,7 @@ def rank(report, limit=10):
                      "illustrative_net_per_contract_pair_usd":str(gain/quantity),
                      "illustrative_net_usd":str(gain),
                      "cost_reduction_for_one_cent_profit_usd":str(gap),
+                     "fixed_ten_contract_pairs":item.get("fixed_ten_contract_pairs"),
                      "monitor_only":True,"rules_verified":False})
     rows.sort(key=lambda x:(Decimal(x["cost_reduction_for_one_cent_profit_usd"]),-Decimal(x["illustrative_net_usd"])))
     return {"research_only":True,"trade_allowed":False,"profit_verified":False,
