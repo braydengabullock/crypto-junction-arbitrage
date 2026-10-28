@@ -25,6 +25,20 @@ def candidate_words(market, *, kalshi=False):
     supplementary = market.get("subtitle") if kalshi else None
     return tokenize(" ".join(str(v) for v in (primary,supplementary) if v))
 
+def eligible_for_simple_match(market, *, kalshi=False):
+    """Reject bundles/parlays from simple two-outcome matching.
+    
+    A cross-category contract cannot be paired with one ordinary event.
+    Remaining records still require formal rule and outcome verification.
+    """
+    title=str(market.get("title") or market.get("question") or "")
+    ticker=str(market.get("ticker") or "")
+    if kalshi and ("CROSSCATEGORY" in ticker.upper() or "PARLAY" in ticker.upper()):
+        return False
+    if len(title)>240 or len(tokenize(title))>35 or title.count(",")>=5:
+        return False
+    return True
+
 def candidate_score(left, right):
     # Overlap coefficient helps discover alternate wordings, but remains unverified.
     if not left or not right: return 0.0
@@ -45,10 +59,12 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
     index=defaultdict(list)
     p_markets=polymarket["markets"]
     for ix, market in enumerate(p_markets):
+        if not eligible_for_simple_match(market): continue
         for word in candidate_words(market):
             index[word].append(ix)
     results=[]
     for market in kalshi["markets"]:
+        if not eligible_for_simple_match(market,kalshi=True): continue
         title=market.get("title") or ""
         words=candidate_words(market,kalshi=True)
         if not words:
