@@ -61,7 +61,7 @@ jobs:
           lines.append("")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
-              out.write("\\n".join(lines) + "\\n")
+              out.write("\n".join(lines) + "\n")
           PY
       - name: Validate research logic
         if: always()
