@@ -37,6 +37,8 @@ jobs:
           python indicative_candidate_screen.py --matches research_matches.json --polymarket "$P" --output indicative_candidate_screen.json
       - name: Shortlist multi-event sports candidates for manual review
         run: python sports_candidate_shortlist.py
+      - name: Group sporting candidate leads by event identifiers
+        run: python sports_event_leads.py
       - name: Diagnose discovery coverage and near-match examples
         run: |
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
@@ -73,6 +75,7 @@ jobs:
               ("one_event_book_probe.json", ("status", "both_event_apis_returned", "rule_equivalence_verified")),
               ("one_event_pair_combinations.json", ("status", "net_roi_verified")),
               ("sports_candidate_shortlist.json", ("sports_candidates_returned", "verified_paired_opportunities")),
+              ("sports_event_leads.json", ("groups_found", "skipped_missing_identifiers", "verified_pairs")),
               ("indicative_candidate_screen.json", ("status", "candidate_outcomes")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
@@ -109,6 +112,7 @@ jobs:
             snapshots/*.json
             research_matches.json
             sports_candidate_shortlist.json
+            sports_event_leads.json
             discovery_diagnostic.json
             readiness_report.json
             candidate_orderbooks.json
