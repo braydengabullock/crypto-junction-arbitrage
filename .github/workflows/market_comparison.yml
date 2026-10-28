@@ -25,6 +25,11 @@ jobs:
           K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+      - name: Diagnose discovery coverage and near-match examples
+        run: |
+          K="$(find snapshots -maxdepth 1 -name 'kalshi_*.json' -print -quit)"
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python discovery_diagnostic.py --kalshi "$K" --polymarket "$P" --output discovery_diagnostic.json
       - name: Sample candidate public order books (research only)
         run: python candidate_orderbooks.py --matches research_matches.json --max-pairs 5 --output candidate_orderbooks.json
       - name: Audit public orderbook evidence quality
@@ -52,7 +57,8 @@ jobs:
                ("title_match_candidates", "orderbook_candidates_sampled",
                 "paired_books_collected", "timestamp_aligned_candidates",
                 "displayed_depth_on_both_venues", "api_errors")),
-              ("preflight_report.json", ("observation_usable", "issues"))):
+              ("preflight_report.json", ("observation_usable", "issues")),
+              ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
                   lines.append("### " + name)
@@ -76,6 +82,7 @@ jobs:
           path: |
             snapshots/*.json
             research_matches.json
+            discovery_diagnostic.json
             readiness_report.json
             candidate_orderbooks.json
             orderbook_quality.json
