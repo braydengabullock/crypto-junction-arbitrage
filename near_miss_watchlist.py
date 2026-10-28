@@ -32,6 +32,7 @@ def rank(report, limit=10):
                      "illustrative_net_usd":str(gain),
                      "cost_reduction_for_one_cent_profit_usd":str(gap),
                      "fixed_ten_contract_pairs":item.get("fixed_ten_contract_pairs"),
+                     "quote_quality":item.get("quote_quality",{}),
                      "fixed_ten_gap_to_one_cent_usd":str(max(Decimal("0.01")-fixed_gain,Decimal("0"))) if fixed_gain is not None else None,
                      "monitor_only":True,"rules_verified":False})
     rows.sort(key=lambda x:(Decimal(x["cost_reduction_for_one_cent_profit_usd"]),-Decimal(x["illustrative_net_usd"])))
