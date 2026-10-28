@@ -29,6 +29,28 @@ def is_sports_candidate(kalshi_market, poly_market, words):
                 (ticker.startswith(SPORT_TICKER_PREFIXES) and
                  slug.startswith(SPORT_SLUG_PREFIXES)))
 
+
+SPORT_CODES={"NBA":"nba","NFL":"nfl","NHL":"nhl","MLB":"mlb","WNBA":"wnba"}
+MONTHS={"JAN":1,"FEB":2,"MAR":3,"APR":4,"MAY":5,"JUN":6,"JUL":7,"AUG":8,"SEP":9,"OCT":10,"NOV":11,"DEC":12}
+
+def sports_identifier_match(kalshi_market, poly_market):
+    """Conservative date/league/team-code match, not payout or rule equivalence."""
+    ticker=str(kalshi_market.get("ticker") or "").upper()
+    slug=str(poly_market.get("slug") or "").lower()
+    m=re.fullmatch(r"KX(NBA|NFL|NHL|MLB|WNBA)GAME-(\\d{2})([A-Z]{3})(\\d{2})([A-Z]{6})-([A-Z]{3})",ticker)
+    if not m: return False
+    league,yy,mon,day,teams,winner=m.groups()
+    if mon not in MONTHS: return False
+    a,b=teams[:3],teams[3:]
+    if a==b or winner not in (a,b): return False
+    try:
+        from datetime import date
+        actual=date(2000+int(yy),MONTHS[mon],int(day)).isoformat()
+    except ValueError: return False
+    expected=f"{SPORT_CODES[league]}-{a.lower()}-{b.lower()}-{actual}"
+    reverse=f"{SPORT_CODES[league]}-{b.lower()}-{a.lower()}-{actual}"
+    return slug in (expected,reverse)
+
 def candidate_words(market, *, kalshi=False):
     """Use descriptive event fields; never use rule text to create a match."""
     primary = market.get("title") if kalshi else market.get("question")
@@ -68,6 +90,10 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
         raise ValueError("Invalid matching threshold or result cap")
     index=defaultdict(list)
     p_markets=polymarket["markets"]
+    by_sport_slug=defaultdict(list)
+    for ix,pm in enumerate(p_markets):
+        if eligible_for_simple_match(pm) and pm.get("enableOrderBook") is not False and pm.get("acceptingOrders") is not False:
+            by_sport_slug[str(pm.get("slug") or "").lower()].append(ix)
     for ix, market in enumerate(p_markets):
         if not eligible_for_simple_match(market): continue
         if market.get("enableOrderBook") is False or market.get("acceptingOrders") is False: continue
@@ -83,11 +109,14 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
         ids=set()
         for word in words:
             ids.update(index[word])
+        for ix,other in enumerate(p_markets):
+            if sports_identifier_match(market,other): ids.add(ix)
         for ix in ids:
             other=p_markets[ix]
             other_words=candidate_words(other)
             score=candidate_score(words,other_words)
-            if score >= threshold:
+            ident_match=sports_identifier_match(market,other)
+            if score >= threshold or ident_match:
                 results.append({
                     "kalshi_ticker":market.get("ticker"),
                     "polymarket_id":other.get("id"),
@@ -112,8 +141,8 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
                         "Obtain synchronized executable orderbook depth and all fees"
                     ],
                     "title_similarity":round(score,3),
-                    "match_method":"title_subtitle_token_containment_research",
-                    "sports_candidate":is_sports_candidate(market,other,words | other_words),
+                    "match_method":"sports_identifier_date_teams_research" if ident_match else "title_subtitle_token_containment_research",
+                    "sports_candidate":ident_match or is_sports_candidate(market,other,words | other_words),
                     "shared_event_terms":sorted(words & other_words),
                     "kalshi_subtitle":market.get("subtitle"),
                     "market_rules_verified":False,
