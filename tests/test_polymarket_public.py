@@ -19,6 +19,8 @@ class PolymarketPublicTests(unittest.TestCase):
             params=parse_qs(urlsplit(req.full_url).query)
             self.assertEqual(params["active"],["true"])
             self.assertEqual(params["closed"],["false"])
+            self.assertEqual(params["order"],["volume24hr"])
+            self.assertEqual(params["ascending"],["false"])
             self.assertEqual(timeout,20)
             return Response([{"id":"1","question":"Test","outcomePrices":json.dumps(["0.5","0.5"])}])
         markets,page=fetch_markets(limit=10,opener=opener)
