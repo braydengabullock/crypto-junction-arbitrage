@@ -7,6 +7,19 @@ import re
 from pathlib import Path
 from one_event_outcome_pairs import outcomes
 
+NHL_TEAMS={
+ "ANA":("Anaheim","Ducks"),"BOS":("Boston","Bruins"),"BUF":("Buffalo","Sabres"),
+ "CAR":("Carolina","Hurricanes"),"CBJ":("Columbus","Blue Jackets"),"CGY":("Calgary","Flames"),
+ "CHI":("Chicago","Blackhawks"),"COL":("Colorado","Avalanche"),"DAL":("Dallas","Stars"),
+ "DET":("Detroit","Red Wings"),"EDM":("Edmonton","Oilers"),"FLA":("Florida","Panthers"),
+ "LAK":("Los Angeles","Kings"),"MIN":("Minnesota","Wild"),"MTL":("Montreal","Canadiens"),
+ "NJD":("New Jersey","Devils"),"NSH":("Nashville","Predators"),"NYI":("New York","Islanders"),
+ "NYR":("New York","Rangers"),"OTT":("Ottawa","Senators"),"PHI":("Philadelphia","Flyers"),
+ "PIT":("Pittsburgh","Penguins"),"SEA":("Seattle","Kraken"),"SJS":("San Jose","Sharks"),
+ "STL":("St Louis","Blues"),"TBL":("Tampa Bay","Lightning"),"TOR":("Toronto","Maple Leafs"),
+ "UTA":("Utah","Mammoth"),"VAN":("Vancouver","Canucks"),"VGK":("Vegas","Golden Knights"),
+ "WPG":("Winnipeg","Jets"),"WSH":("Washington","Capitals")}
+
 NBA_TEAMS={
  "ATL":("Atlanta","Hawks"),"BOS":("Boston","Celtics"),"BKN":("Brooklyn","Nets"),
  "CHA":("Charlotte","Hornets"),"CHI":("Chicago","Bulls"),"CLE":("Cleveland","Cavaliers"),
@@ -41,7 +54,9 @@ def make_mapping(matches):
         code_to_row={c["kalshi_ticker"][-3:]:c for c in cs}
         if len(code_to_row)!=2 or len(cs)!=2: continue
         codes=set(code_to_row)
-        if not event.startswith("KXNBAGAME-") or any(code not in NBA_TEAMS for code in codes): continue
+        league=event.split("GAME-",1)[0].removeprefix("KX")
+        teams={"NBA":NBA_TEAMS,"NHL":NHL_TEAMS}.get(league)
+        if teams is None or any(code not in teams for code in codes): continue
         # Official market outcome labels and token IDs must be retained from
         # snapshot; a title-only match cannot identify the correct token.
         labels=outcomes(cs[0].get("polymarket_outcomes"))
@@ -51,7 +66,7 @@ def make_mapping(matches):
         for code,row in code_to_row.items():
             title=normalize(row.get("kalshi_title",""))
             subtitle=normalize(row.get("kalshi_subtitle",""))
-            city,nickname=NBA_TEAMS[code]
+            city,nickname=teams[code]
             # Require exact known NBA city in Kalshi winner title and exact
             # NBA nickname or full team name in Polymarket outcome label.
             if not re.search(r"(?<![a-z0-9])"+re.escape(normalize(city))+r"(?![a-z0-9])",title+" "+subtitle):
