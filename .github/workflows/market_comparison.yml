@@ -187,6 +187,17 @@ jobs:
                                pct(row.get("identifier_coverage_pct_of_discovered_sides")) + " | " +
                                pct(row.get("mapping_coverage_pct_of_matched_sides")) + " | " +
                                str(row.get("discovery_bottleneck", "UNKNOWN")) + " |")
+              priorities = funnel.get("research_priorities", [])
+              lines.append("")
+              lines.append("### Largest research coverage gaps")
+              if priorities:
+                  for item in priorities[:5]:
+                      lines.append("- " + str(item.get("league")) + " / " +
+                                   str(item.get("stage")) + ": " +
+                                   str(item.get("missing_sides")) +
+                                   " unmatched contract sides (not trading opportunities)")
+              else:
+                  lines.append("- No unmatched sports contract sides in the collected sample; pricing and rule verification remain outstanding.")
               if funnel.get("matches_candidate_cap_reached"):
                   lines.append("**Coverage warning:** Candidate comparison reached its configured cap.")
               if funnel.get("polymarket_coverage_complete") is not True:
