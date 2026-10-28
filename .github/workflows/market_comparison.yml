@@ -33,7 +33,7 @@ jobs:
         run: |
           K="kalshi_sports_snapshot.json"
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
-          python market_comparison.py --kalshi "$K" --polymarket "$P" --output research_matches.json
+          python market_comparison.py --kalshi "$K" --polymarket "$P" --max-results 500 --output research_matches.json
       - name: Diagnose Polymarket public CLOB access without bypasses
         run: python clob_access_diagnostic.py
       - name: Screen multi-market indicative outcome candidates (no executable quote)
@@ -51,6 +51,10 @@ jobs:
           python discovery_diagnostic.py --kalshi "$K" --polymarket "$P" --output discovery_diagnostic.json
       - name: Sample candidate public order books (research only)
         run: python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
+      - name: Diagnose cross-league sports discovery funnel
+        run: |
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          python sports_discovery_funnel.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --matches research_matches.json --mapping opposing_token_map.json --output sports_discovery_funnel.json
       - name: Sample mapped game-winner orderbooks (bounded research)
         run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 20 --output candidate_orderbooks.json
       - name: Screen displayed depth with explicit fee input gate
@@ -147,6 +151,7 @@ jobs:
               ("watchlist_trends.json", ("comparable_pairs",)),
               ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
               ("settlement_rule_triage.json", ("records_examined", "records_with_text_mention_differences", "verified_pairs")),
+              ("sports_discovery_funnel.json", ("polymarket_markets_sampled", "matches_candidate_cap_reached", "by_league")),
               ("discovery_diagnostic.json", ("sports_keyword_markets", "near_match_candidate_count", "kalshi_coverage_complete", "polymarket_coverage_complete"))):
               try:
                   data = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -185,6 +190,7 @@ jobs:
             sports_candidate_shortlist.json
             sports_event_leads.json
             discovery_diagnostic.json
+            sports_discovery_funnel.json
             readiness_report.json
             candidate_orderbooks.json
             depth_fee_screen.json
