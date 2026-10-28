@@ -64,7 +64,7 @@ def settle(db, trade_id, *, observed_at, payout_a, payout_b,
     if not source_a or not source_b:
         raise ValueError("Both resolution sources required")
     p_a,p_b=decimal(payout_a),decimal(payout_b)
-    expected=Decimal(str(entry["review"]["pair"]["total_cost"])) + Decimal(
+    expected=Decimal(str(entry["review"]["pair"]["capital_usd"])) + Decimal(
         str(entry["review"]["pair"]["estimated_net_usd"]))
     # Typical complementary hedged pair settles at the original integer
     # contract quantity. This is checked, not assumed to have happened.
