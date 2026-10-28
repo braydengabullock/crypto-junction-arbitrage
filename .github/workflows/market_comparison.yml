@@ -309,6 +309,14 @@ jobs:
                             "- $100 maximum modeled combined stake; all fees and currency costs require verification."])
           except (OSError, ValueError, TypeError):
               lines.append("Positive-net ROI tier counts unavailable.")
+          try:
+              watchlist = json.loads(Path("near_miss_watchlist.json").read_text(encoding="utf-8"))
+              lines.extend(["", "### Research shortlist cost evidence",
+                            "- Modeled cost inputs present (still unverified): " + str(watchlist.get("cost_inputs_complete_for_model_count", 0)),
+                            "- Hypothetical positive but cost inputs incomplete: " + str(watchlist.get("positive_but_cost_incomplete_count", 0)),
+                            "- Neither status verifies actual fees, FX rates, market resolution or fills."])
+          except (OSError, ValueError, TypeError):
+              lines.append("Research shortlist cost evidence unavailable.")
           lines.append("**Verified opportunities: 0. Realized profit: not established.**")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
