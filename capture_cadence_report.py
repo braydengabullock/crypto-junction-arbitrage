@@ -4,16 +4,17 @@ No missing observations are invented and no market opportunities are asserted.
 """
 import argparse
 import json
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from historical_snapshot_replay import timestamp
 
-def evaluate(archive, *, expected_minutes=15, window_hours=24):
+def evaluate(archive, *, expected_minutes=15, window_hours=24, as_of=None):
     captures=archive.get("captures",[])
     points=sorted({timestamp(c["captured_at"]) for c in captures})
-    end=points[-1] if points else None
-    start=end-timedelta(hours=window_hours) if end else None
-    recent=[t for t in points if t>=start] if start else []
+    end=as_of if as_of is not None else datetime.now(timezone.utc)
+    if end.tzinfo is None: raise ValueError("as_of must include timezone")
+    start=end-timedelta(hours=window_hours)
+    recent=[t for t in points if start<=t<=end]
     gaps=[round((b-a).total_seconds()/60,2) for a,b in zip(recent,recent[1:])]
     # This measures only the period covered by evidence, not the missing
     # calendar time before first available capture.
@@ -25,6 +26,9 @@ def evaluate(archive, *, expected_minutes=15, window_hours=24):
         "research_only":True,"trade_allowed":False,
         "window_hours":window_hours,"expected_interval_minutes":expected_minutes,
         "capture_count_in_window":len(recent),
+        "review_as_of":end.isoformat(),
+        "minutes_since_last_observation":round((end-recent[-1]).total_seconds()/60,2) if recent else None,
+        "latest_capture_is_stale":(end-recent[-1]).total_seconds()>expected_minutes*90 if recent else True,
         "first_observation_in_window":recent[0].isoformat() if recent else None,
         "last_observation_in_window":recent[-1].isoformat() if recent else None,
         "observed_span_minutes":round(span,2),
