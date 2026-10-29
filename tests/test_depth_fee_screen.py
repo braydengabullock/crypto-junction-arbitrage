@@ -53,6 +53,22 @@ class DepthFeeTests(unittest.TestCase):
   self.assertGreater(Decimal(item["max_roi_scenario"]["hypothetical_roi_pct"]),
                      Decimal(item["scenario"]["hypothetical_roi_pct"]))
   self.assertFalse(result["trade_allowed"])
+ def test_per_venue_limit_bounds_size_even_with_combined_headroom(self):
+  data={"rows":[{"kalshi_ticker":"UNBALANCED","observations":[
+    {"venue":"kalshi","book":{"orderbook_fp":{"no_dollars":[["0.10","5000"]],"yes_dollars":[]}}},
+    {"venue":"polymarket","token_id":"123","book":{"asks":[{"price":"0.05","size":"5000"}]}}]}]}
+  r=screen(data,poly_rate="0",kalshi_multiplier="0",extra_cost="0",
+           budget="5000",per_venue_budget="2500",
+           opposing_tokens={"UNBALANCED|YES":"123"})
+  self.assertEqual(r["max_per_venue_research_budget_usd"],"2500")
+  scenario=r["rows"][0]["scenario"]
+  self.assertLessEqual(Decimal(scenario["venue_allocation"]["kalshi_with_modeled_fee_usd"]),Decimal("2500"))
+  self.assertLessEqual(Decimal(scenario["venue_allocation"]["polymarket_with_modeled_fee_usd"]),Decimal("2500"))
+  self.assertLess(Decimal(scenario["total_cost_usd"]),Decimal("5000"))
+  self.assertFalse(r["trade_allowed"])
+  with self.assertRaises(ValueError):
+   screen(data,poly_rate="0",kalshi_multiplier="0",extra_cost="0",
+          per_venue_budget="2500.01",opposing_tokens={"UNBALANCED|YES":"123"})
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
