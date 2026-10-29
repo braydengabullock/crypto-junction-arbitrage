@@ -38,7 +38,8 @@ def audit(report):
         except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
             problems.append("Scenario "+str(i)+": "+str(exc))
     return {"research_only":True,"trade_allowed":False,"verified_opportunities":0,
-            "scenarios_checked":len(scenarios),"capital_audit_passed":not problems,
+            "scenarios_checked":len(scenarios),"capital_audit_passed":not problems and bool(scenarios),
+            "evidence_status":"VALIDATED_SAMPLE" if scenarios and not problems else ("NO_SCENARIOS" if not scenarios and not problems else "AUDIT_FAILED"),
             "issues":problems[:30],
             "warning":"Passing checks only validates arithmetic and configured research caps, not real fills, fee rates or settlement rules."}
 
@@ -50,7 +51,7 @@ def main():
     result=audit(json.loads(Path(args.input).read_text(encoding="utf-8")))
     Path(args.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
     print(json.dumps(result))
-    if not result["capital_audit_passed"]:
+    if result["evidence_status"]=="AUDIT_FAILED":
         raise SystemExit(1)
 
 if __name__=="__main__":
