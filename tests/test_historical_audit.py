@@ -38,7 +38,7 @@ class HistoricalAuditTests(unittest.TestCase):
         p=sample();p["ask_b"]="0.60"
         self.assertEqual(evaluate(p)["status"],"NOT_VALIDATED")
     def test_small_positive_below_two_percent_is_allowed(self):
-        p=sample();p["ask_b"]="0.535"
+        p=sample();p["ask_b"]="0.575"
         r=evaluate(p)
         self.assertEqual(r["status"],"CONDITIONAL_PAPER_RESULT")
         self.assertGreater(float(r["entry_projected_roi_pct"]),0)
