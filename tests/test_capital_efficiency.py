@@ -21,6 +21,14 @@ class CapitalEfficiencyTests(unittest.TestCase):
         s={"contracts_each":10,"total_cost_usd":"11","hypothetical_net_usd":"-1"}
         r=compare({"rows":[{"scenario":s,"max_roi_scenario":s}, {"scenario":{}, "max_roi_scenario":{}}]})
         self.assertEqual(r["excluded_incomplete_or_invalid_scenarios"],2)
+    def test_fractional_or_reversed_quantities_excluded(self):
+        a={"contracts_each":"5.5","total_cost_usd":"4","hypothetical_net_usd":"1"}
+        b={"contracts_each":10,"total_cost_usd":"8","hypothetical_net_usd":"2"}
+        x=compare({"rows":[{"scenario":b,"max_roi_scenario":a}]})
+        self.assertEqual(x["excluded_incomplete_or_invalid_scenarios"],1)
+        self.assertEqual(x["comparisons"],[])
+        reversed_sizes=compare({"rows":[{"scenario":a|{"contracts_each":5},"max_roi_scenario":b}]})
+        self.assertEqual(reversed_sizes["excluded_incomplete_or_invalid_scenarios"],1)
     def test_no_positive_model_excluded(self):
         s={"contracts_each":10,"total_cost_usd":"11","hypothetical_net_usd":"-1"}
         self.assertEqual(compare({"rows":[{"scenario":s,"max_roi_scenario":s}]})["comparisons"],[])
