@@ -1,10 +1,19 @@
 name: 24-hour public orderbook observation (read only)
 on:
   workflow_dispatch:
+    inputs:
+      iterations_per_window:
+        description: 'Cycles per window: 2 for smoke test; 240 for full observation'
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '2'
+          - '240'
 permissions:
   contents: read
 concurrency:
-  group: twenty-four-hour-public-observation
+  group: twenty-four-hour-public-observation-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   window_1:
@@ -38,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_1
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_1 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_1.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_1 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_1.log
       - name: Inspect window 1 evidence
         if: always()
         run: |
@@ -87,7 +96,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_2
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_2 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_2.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_2 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_2.log
       - name: Inspect window 2 evidence
         if: always()
         run: |
@@ -136,7 +145,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_3
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_3 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_3.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_3 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_3.log
       - name: Inspect window 3 evidence
         if: always()
         run: |
@@ -185,7 +194,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_4
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_4 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_4.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_4 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_4.log
       - name: Inspect window 4 evidence
         if: always()
         run: |
@@ -234,7 +243,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_5
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_5 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_5.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_5 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_5.log
       - name: Inspect window 5 evidence
         if: always()
         run: |
@@ -283,7 +292,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p observation_window_6
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_6 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_6.log
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_6 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations ${{ inputs.iterations_per_window }} | tee observation_window_6.log
       - name: Inspect window 6 evidence
         if: always()
         run: |
