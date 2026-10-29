@@ -80,12 +80,12 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+kfee+pfee+fixed+fx
                         kalshi_required=Decimal(kc["displayed_cost_usd"])+kfee
                         polymarket_required=Decimal(pc["displayed_cost_usd"])+pfee
-                        if total>cap or kalshi_required>venue_cap or polymarket_required>venue_cap: break
+                        # Unknown funding venue for FX/extra: conservatively reserve full overhead on EACH venue.\n                        # This is a funding gate only; total modeled costs include overhead once.\n                        overhead=fixed+fx\n                        kalshi_funding_reserve=kalshi_required+overhead\n                        polymarket_funding_reserve=polymarket_required+overhead\n                        if total>cap or kalshi_funding_reserve>venue_cap or polymarket_funding_reserve>venue_cap: break
                         profit=Decimal(n)-total
                         allocation={"kalshi_displayed_usd":str(kc["displayed_cost_usd"]),
                                     "kalshi_with_modeled_fee_usd":str(kalshi_required),
                                     "polymarket_with_modeled_fee_usd":str(polymarket_required),
-                                    "polymarket_displayed_usd":str(pc["displayed_cost_usd"]),
+                                    "polymarket_displayed_usd":str(pc["displayed_cost_usd"]),\n                                    "kalshi_conservative_funding_reserve_usd":str(kalshi_funding_reserve),\n                                    "polymarket_conservative_funding_reserve_usd":str(polymarket_funding_reserve),\n                                    "overhead_funding_venue_unverified":True,
                                     "modeled_fees_and_extra_usd":str(kfee+pfee+fixed),
                                     "assumed_fx_cost_usd":str(fx),
                                     "fx_cost_supplied":fx_cost is not None}
