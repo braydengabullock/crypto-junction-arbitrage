@@ -36,11 +36,13 @@ jobs:
           retention-days: 14
       - name: Collect four-hour window 1 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_1
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_1 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_1.log
       - name: Inspect window 1 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_1 > observation_window_1_health.json
           cat observation_window_1_health.json
       - name: Preserve window 1 checkpoint even on failure
@@ -76,11 +78,13 @@ jobs:
           path: .
       - name: Collect four-hour window 2 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_2
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_2 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_2.log
       - name: Inspect window 2 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_2 > observation_window_2_health.json
           cat observation_window_2_health.json
       - name: Preserve window 2 checkpoint even on failure
@@ -116,11 +120,13 @@ jobs:
           path: .
       - name: Collect four-hour window 3 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_3
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_3 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_3.log
       - name: Inspect window 3 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_3 > observation_window_3_health.json
           cat observation_window_3_health.json
       - name: Preserve window 3 checkpoint even on failure
@@ -156,11 +162,13 @@ jobs:
           path: .
       - name: Collect four-hour window 4 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_4
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_4 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_4.log
       - name: Inspect window 4 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_4 > observation_window_4_health.json
           cat observation_window_4_health.json
       - name: Preserve window 4 checkpoint even on failure
@@ -196,11 +204,13 @@ jobs:
           path: .
       - name: Collect four-hour window 5 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_5
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_5 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_5.log
       - name: Inspect window 5 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_5 > observation_window_5_health.json
           cat observation_window_5_health.json
       - name: Preserve window 5 checkpoint even on failure
@@ -236,11 +246,13 @@ jobs:
           path: .
       - name: Collect four-hour window 6 (read only)
         run: |
+          set -euo pipefail
           mkdir -p observation_window_6
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_6 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_6.log
       - name: Inspect window 6 evidence
         if: always()
         run: |
+          set -euo pipefail
           python collector_health.py --archive-dir observation_window_6 > observation_window_6_health.json
           cat observation_window_6_health.json
       - name: Preserve window 6 checkpoint even on failure
@@ -274,8 +286,16 @@ jobs:
           pattern: observation-window-*
           path: observation_all
           merge-multiple: false
+      - name: Verify all six checkpoint archives exist
+        run: |
+          set -euo pipefail
+          for n in 1 2 3 4 5 6; do
+            test -d "observation_all/observation-window-$n"
+            find "observation_all/observation-window-$n" -name '*.json' -path '*/observation_window_*/*' | grep -q .
+          done
       - name: Replay all archived public observations
         run: |
+          set -euo pipefail
           python local_historical_backtest.py --archive-dir observation_all --output-dir observation_final | tee observation_final_summary.json
       - name: Preserve final analysis
         if: always()
