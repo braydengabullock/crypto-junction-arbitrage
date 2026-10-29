@@ -14,7 +14,7 @@ from continuous_book_collector import run
 def benchmark(*, pairs=30, iterations=3, interval_seconds=60, latency_ms=0):
     if not 1<=pairs<=30 or not 1<=iterations<=20 or not 0<=latency_ms<=1000:
         raise ValueError("Invalid bounded benchmark settings")
-    candidates=[{"kalshi_ticker":f"K{i}","polymarket_clob_token_ids":json.dumps([str(i+100000)])}
+    candidates=[{"kalshi_ticker":f"K{i}","polymarket_clob_token_ids":json.dumps([str(i+100000),str(i+200000)])}
                 for i in range(pairs)]
     matches={"source":"kalshi_polymarket_title_research","research_only":True,"candidates":candidates}
     mapping={"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels",
@@ -35,6 +35,9 @@ def benchmark(*, pairs=30, iterations=3, interval_seconds=60, latency_ms=0):
         files=len(list(Path(d).glob("*.json")))
     durations=[r["cycle_duration_seconds"] for r in rows]
     return {"benchmark_type":"OFFLINE_SIMULATED_LATENCY","network_calls":0,"research_only":True,
+            "simulated_requests_per_cycle":pairs*3,
+            "simulated_total_requests":pairs*3*iterations,
+            "theoretical_request_latency_seconds_per_cycle":round(pairs*3*latency_ms/1000,3),
             "trade_allowed":False,"pairs":pairs,"iterations":iterations,
             "simulated_latency_per_request_ms":latency_ms,
             "interval_target_seconds":interval_seconds,
