@@ -4,7 +4,6 @@ import json
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-TARGET=Decimal("2")
 def evaluate(pricing):
     near=pricing.get("near_misses",[])
     bykey={(str(x.get("kalshi_ticker")),str(x.get("kalshi_side")),str(x.get("polymarket_token_id"))):x for x in near}
@@ -31,7 +30,6 @@ def evaluate(pricing):
                 "contracts_each":int(size),
                 "hypothetical_profit_usd":str(profit),
                 "hypothetical_roi_pct":str(roi.quantize(Decimal("0.001"))),
-                "modeled_roi_at_least_2_pct":roi>=TARGET,
                 "quote_observation_within_20_seconds":synchronized,
                 "displayed_depth_for_ten":sufficient_depth,
                 "requires_independent_rule_fee_fx_and_execution_verification":True,
@@ -39,18 +37,17 @@ def evaluate(pricing):
             })
         except (KeyError,ValueError,TypeError,InvalidOperation,ArithmeticError):
             excluded+=1
-    target=[x for x in reviewed if x["modeled_roi_at_least_2_pct"]]
     return {"research_only":True,"trade_allowed":False,"verified_profitable_opportunities":0,
-            "model_target_roi_pct":"2",
+            "eligibility_rule":"strictly_positive_modeled_net_after_costs",
             "candidate_pairs_with_positive_modeled_net":len(reviewed),
-            "candidate_pairs_at_least_2_pct_modeled_roi":len(target),
-            "at_target_with_short_quote_window":sum(x["quote_observation_within_20_seconds"] for x in target),
-            "at_target_with_short_window_and_ten_contract_depth":sum(x["quote_observation_within_20_seconds"] and x["displayed_depth_for_ten"] for x in target),
+            "candidate_pairs_eligible_for_research":len(reviewed),
+            "positive_candidates_with_short_quote_window":sum(x["quote_observation_within_20_seconds"] for x in reviewed),
+            "positive_candidates_with_short_window_and_ten_contract_depth":sum(x["quote_observation_within_20_seconds"] and x["displayed_depth_for_ten"] for x in reviewed),
             "excluded_invalid_positive_rows":excluded,
             "fx_cost_explicitly_modeled":pricing.get("fx_cost_supplied") is True,
             "fee_inputs_verified":False,"rules_verified":False,
             "candidates":reviewed[:50],
-            "conclusion":"MODELED_CANDIDATES_NOT_VERIFIED" if target else "NO_MODELED_2_PERCENT_CANDIDATES_IN_THIS_SAMPLE",
+            "conclusion":"MODELED_CANDIDATES_NOT_VERIFIED" if reviewed else "NO_POSITIVE_MODELED_CANDIDATES_IN_THIS_SAMPLE",
             "warning":"Not a historical backtest or trading recommendation. Public snapshots are not synchronized executable quotes. Pricing assumptions, FX, outcomes, eligibility and fills remain unverified."}
 
 def main():
