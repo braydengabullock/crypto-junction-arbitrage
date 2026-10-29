@@ -81,6 +81,7 @@ def snapshot(markets, now=None):
                 "no_ask_dollars": m.get("no_ask_dollars"),
                 "volume_fp": m.get("volume_fp"),
                 "rules_primary": m.get("rules_primary"),
+                "rules_secondary": m.get("rules_secondary"),
             }
             for m in markets
         ],
