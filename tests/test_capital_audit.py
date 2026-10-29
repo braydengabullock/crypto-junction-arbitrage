@@ -15,6 +15,11 @@ class CapitalAuditTests(unittest.TestCase):
         self.assertTrue(r["capital_audit_passed"])
         self.assertEqual(r["scenarios_checked"],2)
         self.assertFalse(r["trade_allowed"])
+    def test_no_scenarios_is_not_validated_evidence(self):
+        r=audit({"rows":[],"near_misses":[]})
+        self.assertEqual(r["evidence_status"],"NO_SCENARIOS")
+        self.assertFalse(r["capital_audit_passed"])
+        self.assertFalse(r["trade_allowed"])
     def test_exceed_either_venue_limit(self):
         self.assertFalse(audit(report(k="2500.01"))["capital_audit_passed"])
         self.assertFalse(audit(report(p="2500.01"))["capital_audit_passed"])
