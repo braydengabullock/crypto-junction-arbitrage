@@ -45,6 +45,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_1 > observation_window_1_health.json
           cat observation_window_1_health.json
+      - name: Build window 1 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_1 ]; then python local_historical_backtest.py --archive-dir observation_window_1 --output-dir observation_window_1_backtest > observation_window_1_backtest_summary.json; fi
       - name: Preserve window 1 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,9 +65,9 @@ jobs:
       - name: Publish window 1 progress summary
         if: always()
         run: |
-          if [ -d observation_window_1 ]; then python local_historical_backtest.py --archive-dir observation_window_1 --output-dir observation_window_1_backtest > observation_window_1_backtest_summary.json; fi
           echo '### Window 1 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_1_health.json ]; then cat observation_window_1_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_1_backtest_summary.json ]; then cat observation_window_1_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   window_2:
     runs-on: ubuntu-latest
@@ -90,6 +94,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_2 > observation_window_2_health.json
           cat observation_window_2_health.json
+      - name: Build window 2 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_2 ]; then python local_historical_backtest.py --archive-dir observation_window_2 --output-dir observation_window_2_backtest > observation_window_2_backtest_summary.json; fi
       - name: Preserve window 2 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -106,9 +114,9 @@ jobs:
       - name: Publish window 2 progress summary
         if: always()
         run: |
-          if [ -d observation_window_2 ]; then python local_historical_backtest.py --archive-dir observation_window_2 --output-dir observation_window_2_backtest > observation_window_2_backtest_summary.json; fi
           echo '### Window 2 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_2_health.json ]; then cat observation_window_2_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_2_backtest_summary.json ]; then cat observation_window_2_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   window_3:
     runs-on: ubuntu-latest
@@ -135,6 +143,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_3 > observation_window_3_health.json
           cat observation_window_3_health.json
+      - name: Build window 3 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_3 ]; then python local_historical_backtest.py --archive-dir observation_window_3 --output-dir observation_window_3_backtest > observation_window_3_backtest_summary.json; fi
       - name: Preserve window 3 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -151,9 +163,9 @@ jobs:
       - name: Publish window 3 progress summary
         if: always()
         run: |
-          if [ -d observation_window_3 ]; then python local_historical_backtest.py --archive-dir observation_window_3 --output-dir observation_window_3_backtest > observation_window_3_backtest_summary.json; fi
           echo '### Window 3 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_3_health.json ]; then cat observation_window_3_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_3_backtest_summary.json ]; then cat observation_window_3_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   window_4:
     runs-on: ubuntu-latest
@@ -180,6 +192,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_4 > observation_window_4_health.json
           cat observation_window_4_health.json
+      - name: Build window 4 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_4 ]; then python local_historical_backtest.py --archive-dir observation_window_4 --output-dir observation_window_4_backtest > observation_window_4_backtest_summary.json; fi
       - name: Preserve window 4 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -196,9 +212,9 @@ jobs:
       - name: Publish window 4 progress summary
         if: always()
         run: |
-          if [ -d observation_window_4 ]; then python local_historical_backtest.py --archive-dir observation_window_4 --output-dir observation_window_4_backtest > observation_window_4_backtest_summary.json; fi
           echo '### Window 4 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_4_health.json ]; then cat observation_window_4_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_4_backtest_summary.json ]; then cat observation_window_4_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   window_5:
     runs-on: ubuntu-latest
@@ -225,6 +241,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_5 > observation_window_5_health.json
           cat observation_window_5_health.json
+      - name: Build window 5 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_5 ]; then python local_historical_backtest.py --archive-dir observation_window_5 --output-dir observation_window_5_backtest > observation_window_5_backtest_summary.json; fi
       - name: Preserve window 5 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -241,9 +261,9 @@ jobs:
       - name: Publish window 5 progress summary
         if: always()
         run: |
-          if [ -d observation_window_5 ]; then python local_historical_backtest.py --archive-dir observation_window_5 --output-dir observation_window_5_backtest > observation_window_5_backtest_summary.json; fi
           echo '### Window 5 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_5_health.json ]; then cat observation_window_5_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_5_backtest_summary.json ]; then cat observation_window_5_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   window_6:
     runs-on: ubuntu-latest
@@ -270,6 +290,10 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_6 > observation_window_6_health.json
           cat observation_window_6_health.json
+      - name: Build window 6 profitability replay
+        if: always()
+        run: |
+          if [ -d observation_window_6 ]; then python local_historical_backtest.py --archive-dir observation_window_6 --output-dir observation_window_6_backtest > observation_window_6_backtest_summary.json; fi
       - name: Preserve window 6 checkpoint even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -286,9 +310,9 @@ jobs:
       - name: Publish window 6 progress summary
         if: always()
         run: |
-          if [ -d observation_window_6 ]; then python local_historical_backtest.py --archive-dir observation_window_6 --output-dir observation_window_6_backtest > observation_window_6_backtest_summary.json; fi
           echo '### Window 6 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
           if [ -f observation_window_6_health.json ]; then cat observation_window_6_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f observation_window_6_backtest_summary.json ]; then cat observation_window_6_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
           echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
   final_report:
     runs-on: ubuntu-latest
