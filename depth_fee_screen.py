@@ -116,7 +116,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                                        "assumed_extra_cost_usd":str(fixed),
                                        "modeled_total_friction_usd":str(kfee+pfee+fixed+fx),
                                        "assumed_fx_cost_usd":str(fx)}
-                        if profit>0 and (best_roi is None or profit/total>Decimal(best_roi["hypothetical_net_usd"])/Decimal(best_roi["total_cost_usd"])):
+                        if profit>0 and (best_roi is None or profit/total>=Decimal(best_roi["hypothetical_net_usd"])/Decimal(best_roi["total_cost_usd"])):
                             best_roi={"contracts_each":n,"total_cost_usd":str(total),
                                       "hypothetical_net_usd":str(profit),
                                       "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001"))),
