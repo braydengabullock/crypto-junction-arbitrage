@@ -36,6 +36,16 @@ def audit(report):
                 raise ValueError("Non-finite value")
             if n<1 or cost<=0 or cost>total or kalshi<0 or poly<0 or kalshi>venue or poly>venue:
                 raise ValueError("Capital cap or quantity violation")
+            # Reconcile modeled total against both displayed legs, fee/extra and FX.
+            displayed_k=Decimal(str(a["kalshi_displayed_usd"]))
+            displayed_p=Decimal(str(a["polymarket_displayed_usd"]))
+            modeled_fees_extra=Decimal(str(a["modeled_fees_and_extra_usd"]))
+            fx=Decimal(str(a["assumed_fx_cost_usd"]))
+            components=(displayed_k,displayed_p,modeled_fees_extra,fx)
+            if any(not x.is_finite() or x<0 for x in components):
+                raise ValueError("Invalid modeled cost component")
+            if sum(components)!=cost:
+                raise ValueError("Displayed legs plus modeled fees and FX do not reconcile")
             if gain != Decimal(n)-cost:
                 raise ValueError("Net profit accounting mismatch")
         except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
