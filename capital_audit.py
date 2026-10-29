@@ -25,7 +25,10 @@ def audit(report):
                 raise ValueError("Missing scenario")
             cost=Decimal(str(s["total_cost_usd"]))
             gain=Decimal(str(s["hypothetical_net_usd"]))
-            n=int(s["contracts_each"])
+            contracts=Decimal(str(s["contracts_each"]))
+            if not contracts.is_finite() or contracts!=contracts.to_integral_value():
+                raise ValueError("Fractional or non-finite contract quantity")
+            n=int(contracts)
             a=s["venue_allocation"]
             kalshi=Decimal(str(a["kalshi_conservative_funding_reserve_usd"]))
             poly=Decimal(str(a["polymarket_conservative_funding_reserve_usd"]))
