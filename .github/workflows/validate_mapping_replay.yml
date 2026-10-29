@@ -1,0 +1,52 @@
+name: Validate mapping and replay saved five-cycle evidence
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/validate_mapping_replay.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run regression and full unit suite
+        run: python -m unittest discover -s tests -v
+      - name: Retrieve original five-cycle archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p saved_trial
+          gh run download 40801916817 --name controlled-collector-trial-40801916817 --dir saved_trial
+          test "$(find saved_trial/controlled_trial_archives -name '*.json' | wc -l)" -eq 5
+      - name: Replay original observations with updated pricing diagnostics
+        run: |
+          python local_historical_backtest.py --archive-dir saved_trial/controlled_trial_archives --output-dir validated_replay | tee replay_summary.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("validated_replay/local_backtest_results.json").read_text())
+          assert r["capture_count_accepted"]==5, "Five archived snapshots required"
+          assert r["capture_count_rejected"]==0, "No snapshots may be silently dropped"
+          assert r["pricing_diagnostics"], "Expected pricing diagnostics"
+          print(json.dumps({"captures":r["capture_count_accepted"],
+            "priced_scenarios":r["total_priced_pair_observations"],
+            "positive_sightings":r["total_positive_candidate_observations"],
+            "pricing_diagnostics":r["pricing_diagnostics"]},indent=2))
+          PY
+      - name: Archive replay results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-mapping-replay-${{ github.run_id }}
+          path: |
+            replay_summary.json
+            validated_replay/*.json
+          if-no-files-found: warn
+          retention-days: 14
