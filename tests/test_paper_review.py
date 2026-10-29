@@ -38,7 +38,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(r["status"],"BLOCKED")
         self.assertNotIn("message_preview",r)
     def test_exposure_fails_closed(self):
-        b=balances();b["total_current_committed"]=200
+        b=balances();b["total_current_committed"]=950
         self.assertEqual(review(example(),b,now=NOW)["status"],"BLOCKED")
 
 if __name__=="__main__":
