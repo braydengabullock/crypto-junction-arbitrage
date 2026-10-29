@@ -96,6 +96,7 @@ jobs:
           python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output multi_run_historical_archive.json
           python historical_snapshot_replay.py --archive multi_run_historical_archive.json --output multi_run_historical_replay.json
           python capture_cadence_report.py --archive multi_run_historical_archive.json --output capture_cadence_report.json
+          python sampling_comparison.py --replay multi_run_historical_replay.json --output sampling_comparison.json
           python - <<'PY'
           import json,os
           from pathlib import Path
@@ -441,6 +442,7 @@ jobs:
             multi_run_historical_archive.json
             multi_run_historical_replay.json
             capture_cadence_report.json
+            sampling_comparison.json
             depth_fee_screen.json
             depth_fee_illustrative.json
             capital_efficiency.json
