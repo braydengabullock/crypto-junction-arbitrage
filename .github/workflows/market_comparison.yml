@@ -56,7 +56,7 @@ jobs:
           P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
           python sports_discovery_funnel.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --matches research_matches.json --mapping opposing_token_map.json --output sports_discovery_funnel.json
       - name: Sample mapped game-winner orderbooks (bounded research)
-        run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 20 --output candidate_orderbooks.json
+        run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 30 --output candidate_orderbooks.json
       - name: Preserve timestamped observed books for future offline replay
         run: python archive_research_capture.py --books candidate_orderbooks.json --mapping opposing_token_map.json --output historical_capture_archive.json
       - name: Replay current archived observation as a one-capture smoke test
