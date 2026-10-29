@@ -47,8 +47,10 @@ class HistoricalAuditTests(unittest.TestCase):
         p=sample();p["depth_a"]=10000;p["depth_b"]=10000
         r=evaluate(p)
         self.assertEqual(r["status"],"CONDITIONAL_PAPER_RESULT")
-        self.assertLessEqual(r["contracts_per_leg"]*0.41,2500)
-        self.assertLessEqual(r["contracts_per_leg"]*0.54,2500)
+        from decimal import Decimal
+        self.assertLessEqual(Decimal(r["modeled_venue_a_cost_usd"]),Decimal("2500"))
+        self.assertLessEqual(Decimal(r["modeled_venue_b_cost_usd"]),Decimal("2500"))
+        self.assertEqual(Decimal(r["modeled_venue_a_cost_usd"])+Decimal(r["modeled_venue_b_cost_usd"]),Decimal(r["modeled_cost_usd"]))
         self.assertEqual(evaluate(p,budget="5001")["status"],"INSUFFICIENT_EVIDENCE")
     def test_actual_loss_is_counted_when_entry_looked_profitable(self):
         p=sample()
