@@ -67,6 +67,8 @@ jobs:
         run: python opportunity_economics.py --input depth_fee_illustrative.json --output opportunity_economics.json
       - name: Audit research sizing against combined and per-platform capital ceilings
         run: python capital_audit.py --input depth_fee_illustrative.json --output capital_audit.json
+      - name: Summarize research pipeline bottlenecks
+        run: python research_pipeline_diagnostic.py --books candidate_orderbooks.json --pricing depth_fee_illustrative.json --capital capital_audit.json --efficiency capital_efficiency.json --output research_pipeline_diagnostic.json
       - name: Rank closest fee-adjusted research watchlist
         run: python near_miss_watchlist.py --input depth_fee_illustrative.json --output near_miss_watchlist.json
       - name: Compare with most recent successful watchlist (read only)
@@ -176,6 +178,7 @@ jobs:
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("capital_efficiency.json", ("matched_scenarios_compared", "different_size_count", "net_profit_verified")),
+              ("research_pipeline_diagnostic.json", ("rows_sampled", "mapped_pairs_with_modeled_costs", "positive_modeled_profit_candidates", "capital_audit_status", "unverified_cost_input_caveat")),
               ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts", "by_league")),
               ("watchlist_trends.json", ("comparable_pairs",)),
               ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
@@ -375,6 +378,7 @@ jobs:
             depth_fee_screen.json
             depth_fee_illustrative.json
             capital_efficiency.json
+            research_pipeline_diagnostic.json
             capital_audit.json
             opportunity_economics.json
             league_quote_quality_trends.json
