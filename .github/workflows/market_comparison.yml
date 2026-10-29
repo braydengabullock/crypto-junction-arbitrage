@@ -71,14 +71,24 @@ jobs:
           mkdir -p historical_prior
           ARCHIVES=(historical_capture_archive.json)
           IDS="$(gh run list --workflow market_comparison.yml --status completed --limit 100 --json databaseId --jq '.[].databaseId')"
+          # Retrieve runs concurrently: 100 serial 5-second timeouts could exceed the job.
+          # Each archive remains an independently timestamped observation.
+          ACTIVE=0
           for ID in $IDS; do
             if [ "$ID" = "${{ github.run_id }}" ]; then continue; fi
-            mkdir -p "historical_prior/$ID"
-            if timeout 5s gh run download "$ID" --name "cross-exchange-research-$ID" --dir "historical_prior/$ID" 2>/dev/null; then
-              if [ -s "historical_prior/$ID/historical_capture_archive.json" ]; then
-                ARCHIVES+=("historical_prior/$ID/historical_capture_archive.json")
-              fi
+            (
+              mkdir -p "historical_prior/$ID"
+              timeout 8s gh run download "$ID" --name "cross-exchange-research-$ID" --dir "historical_prior/$ID" >/dev/null 2>&1 || true
+            ) &
+            ACTIVE=$((ACTIVE + 1))
+            if [ "$ACTIVE" -ge 8 ]; then
+              wait
+              ACTIVE=0
             fi
+          done
+          wait
+          for ARCHIVE in historical_prior/*/historical_capture_archive.json; do
+            if [ -s "$ARCHIVE" ]; then ARCHIVES+=("$ARCHIVE"); fi
           done
           echo "Historical archives found: ${#ARCHIVES[@]} (including current run)"
           python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output multi_run_historical_archive.json
