@@ -30,7 +30,7 @@ def triage(report):
                                     "interpretation":"TEXT_MENTION_DIFFERENCE_ONLY"})
         # A mismatch is a research warning, never an execution approval.
         postponement_conflict=bool(
-            re.search(r"48\\s*hours?",kalshi,re.I)
+            re.search(r"48\s*hours?",kalshi,re.I)
             and re.search(r"postpon|reschedul",kalshi,re.I)
             and re.search(r"postpon|reschedul",poly,re.I)
             and not re.search(r"48\\s*hours?",poly,re.I)
