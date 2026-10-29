@@ -84,6 +84,20 @@ class DepthFeeTests(unittest.TestCase):
   self.assertEqual(Decimal(alloc["kalshi_conservative_funding_reserve_usd"]) -
                    Decimal(alloc["kalshi_with_modeled_fee_usd"]),Decimal("200"))
   self.assertFalse(result["trade_allowed"])
+ def test_explicit_overhead_funding_assignments(self):
+  kwargs=dict(poly_rate="0",kalshi_multiplier="0",extra_cost="3",fx_cost="2",
+              opposing_tokens={"K|YES":"123"})
+  unknown=screen(self.data,**kwargs)["near_misses"][0]["scenario"]["venue_allocation"]
+  assigned=screen(self.data,extra_cost_venue="kalshi",fx_cost_venue="external",
+                  **kwargs)["near_misses"][0]["scenario"]["venue_allocation"]
+  self.assertTrue(unknown["overhead_funding_venue_unverified"])
+  self.assertFalse(assigned["overhead_funding_venue_unverified"])
+  self.assertEqual(Decimal(unknown["kalshi_conservative_funding_reserve_usd"]) -
+                   Decimal(assigned["kalshi_conservative_funding_reserve_usd"]),Decimal("2"))
+  self.assertEqual(Decimal(unknown["polymarket_conservative_funding_reserve_usd"]) -
+                   Decimal(assigned["polymarket_conservative_funding_reserve_usd"]),Decimal("5"))
+  with self.assertRaises(ValueError):
+   screen(self.data,extra_cost_venue="invalid",**kwargs)
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
