@@ -41,9 +41,15 @@ def run(matches,mapping,output_dir,*,interval_seconds=60,iterations=1,
     results=[]
     for i in range(iterations):
         start=clock()
-        results.append(record_once(matches,mapping,output_dir,max_pairs=max_pairs))
+        result=record_once(matches,mapping,output_dir,max_pairs=max_pairs)
+        elapsed=max(0,clock()-start)
+        result["cycle_duration_seconds"]=round(elapsed,3)
+        result["completed_within_target_interval"]=elapsed<=interval_seconds
+        result["interval_target_seconds"]=interval_seconds
+        result["cycle_overrun_seconds"]=round(max(0,elapsed-interval_seconds),3)
+        results.append(result)
         if i+1<iterations:
-            sleeper(max(0,interval_seconds-(clock()-start)))
+            sleeper(max(0,interval_seconds-elapsed))
     return results
 
 def main():
