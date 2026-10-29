@@ -11,8 +11,8 @@ from pathlib import Path
 from unittest.mock import patch
 from continuous_book_collector import run
 
-def benchmark(*, pairs=30, iterations=3, interval_seconds=60, latency_ms=0):
-    if not 1<=pairs<=30 or not 1<=iterations<=20 or not 0<=latency_ms<=1000:
+def benchmark(*, pairs=30, iterations=3, interval_seconds=60, latency_ms=0, workers=1):
+    if not 1<=pairs<=30 or not 1<=iterations<=20 or not 0<=latency_ms<=1000 or not 1<=workers<=4:
         raise ValueError("Invalid bounded benchmark settings")
     candidates=[{"kalshi_ticker":f"K{i}","polymarket_clob_token_ids":json.dumps([str(i+100000),str(i+200000)])}
                 for i in range(pairs)]
@@ -30,15 +30,15 @@ def benchmark(*, pairs=30, iterations=3, interval_seconds=60, latency_ms=0):
         with patch("continuous_book_collector.collect") as collector:
             from candidate_orderbooks import collect
             collector.side_effect=lambda candidates,**kw: collect(candidates,fetch_k=fetch_k,fetch_p=fetch_p,
-                max_pairs=kw["max_pairs"],allowed_tickers=kw["allowed_tickers"])
-            rows=run(matches,mapping,d,interval_seconds=interval_seconds,iterations=iterations,sleeper=lambda _:None)
+                max_pairs=kw["max_pairs"],allowed_tickers=kw["allowed_tickers"],workers=kw["workers"])
+            rows=run(matches,mapping,d,interval_seconds=interval_seconds,iterations=iterations,workers=workers,sleeper=lambda _:None)
         files=len(list(Path(d).glob("*.json")))
     durations=[r["cycle_duration_seconds"] for r in rows]
     return {"benchmark_type":"OFFLINE_SIMULATED_LATENCY","network_calls":0,"research_only":True,
             "simulated_requests_per_cycle":pairs*3,
             "simulated_total_requests":pairs*3*iterations,
             "theoretical_request_latency_seconds_per_cycle":round(pairs*3*latency_ms/1000,3),
-            "trade_allowed":False,"pairs":pairs,"iterations":iterations,
+            "trade_allowed":False,"pairs":pairs,"iterations":iterations,"workers":workers,
             "simulated_latency_per_request_ms":latency_ms,
             "interval_target_seconds":interval_seconds,
             "cycles_within_target":sum(r["completed_within_target_interval"] for r in rows),
@@ -53,10 +53,11 @@ def main():
     p.add_argument("--iterations",type=int,default=3)
     p.add_argument("--interval-seconds",type=int,default=60)
     p.add_argument("--latency-ms",type=int,default=0)
+    p.add_argument("--workers",type=int,default=1)
     p.add_argument("--output",default="collector_benchmark.json")
     a=p.parse_args()
     result=benchmark(pairs=a.pairs,iterations=a.iterations,
-        interval_seconds=a.interval_seconds,latency_ms=a.latency_ms)
+        interval_seconds=a.interval_seconds,latency_ms=a.latency_ms,workers=a.workers)
     Path(a.output).write_text(json.dumps(result,indent=2),encoding="utf-8")
     print(json.dumps(result))
 if __name__=="__main__": main()
