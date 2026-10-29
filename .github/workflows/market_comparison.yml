@@ -109,6 +109,8 @@ jobs:
               f.write(f"- Positive modeled candidate observations: {replay['total_positive_candidate_observations']}\n")
               f.write(f"- Recent 24-hour captures: {cadence['capture_count_in_window']}; largest observed gap (min): {cadence['largest_observed_gap_minutes']}\n")
               f.write(f"- Estimated missed 15-minute intervals within observed span: {cadence['estimated_missing_captures_within_observed_span']}\n")
+              f.write(f"- Estimated missing captures across entire 24-hour window: {cadence['estimated_missing_captures_in_full_window']} of {cadence['expected_captures_in_full_window']}\n")
+              f.write(f"- Beginning/end unobserved gaps (minutes): {cadence['initial_unobserved_gap_minutes']} / {cadence['trailing_unobserved_gap_minutes']}\n")
               f.write("- No minimum ROI; realized fills and rule-equivalence remain unverified.\n")
           PY
       - name: Screen displayed depth with explicit fee input gate
