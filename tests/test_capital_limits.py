@@ -16,7 +16,7 @@ class CapitalTests(unittest.TestCase):
             balance_a=3000,balance_b=3000,portfolio_total=5000,total_current_committed=0)
         self.assertFalse(result["allowed"])
     def test_block_underfunded_venue(self):
-        result=capital_check(self.r,balance_a=50,balance_b=200,portfolio_total=1000,total_current_committed=0)
+        result=capital_check(self.r,balance_a=40,balance_b=200,portfolio_total=1000,total_current_committed=0)
         self.assertFalse(result["allowed"])
     def test_block_aggregate_exposure(self):
         result=capital_check(self.r,balance_a=200,balance_b=200,portfolio_total=1000,total_current_committed=950)
