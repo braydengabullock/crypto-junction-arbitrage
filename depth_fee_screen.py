@@ -6,6 +6,7 @@ still require independent verification. Never places orders.
 import json
 from datetime import datetime
 from pathlib import Path
+from collections import Counter
 from decimal import Decimal
 from orderbook_research import kalshi_buy_levels,polymarket_buy_levels,depth_cost
 from fee_estimates import kalshi_general_taker_fee,polymarket_sports_taker_fee,positive
@@ -44,19 +45,28 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
     result["status"]="OPPOSING_OUTCOME_MAPPING_REQUIRED" if opposing_tokens is None else "ILLUSTRATIVE_ONLY_UNVERIFIED_RULES_AND_FEES"
     if opposing_tokens is None: return result
     if not isinstance(opposing_tokens,dict): raise ValueError("Explicit opposing outcome mapping must be an object")
+    diagnostics=Counter()
     for row in data.get("rows",[]):
+        row_priced=False
+        row_reasons=set()
         ko=next((o for o in row.get("observations",[]) if o.get("venue")=="kalshi"),None)
         ps=[o for o in row.get("observations",[]) if o.get("venue")=="polymarket"]
-        if not ko or not ps: continue
+        if not ko or not ps:
+            diagnostics["MISSING_VENUE_BOOK"]+=1
+            continue
         for side in ("YES","NO"):
             allowed=opposing_tokens.get(str(row.get("kalshi_ticker"))+"|"+side)
-            if not allowed: continue
+            if not allowed:
+                row_reasons.add("NO_OPPOSING_TOKEN_MAPPING")
+                continue
             for po in ps:
                 if str(po.get("token_id"))!=str(allowed): continue
                 try:
                     kl=kalshi_buy_levels(ko["book"],side)
                     pl=polymarket_buy_levels(po["book"])
-                    if not kl or not pl: continue
+                    if not kl or not pl:
+                        row_reasons.add("EMPTY_BUY_DEPTH")
+                        continue
                     best=None
                     best_roi=None
                     closest=None
@@ -134,6 +144,7 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                                   "net_roi_tier":roi_tier(profit,total),"venue_allocation":allocation,
                                   "hypothetical_roi_pct":str((profit/total*100).quantize(Decimal("0.001")))}
                     if closest:
+                        row_priced=True
                         result["near_misses"].append({"kalshi_ticker":row.get("kalshi_ticker"),
                             "kalshi_side":side,"polymarket_token_id":po.get("token_id"),
                             "scenario":closest,"fixed_ten_contract_pairs":fixed_ten,
@@ -150,11 +161,21 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                              "opposite_outcome_mapping_supplied":True,
                              "candidate_only":True})
                 except (ValueError,KeyError,TypeError,ArithmeticError):
+                    row_reasons.add("INVALID_ORDERBOOK_OR_PRICING")
                     continue
+            if not any(str(p.get("token_id"))==str(allowed) for p in ps):
+                row_reasons.add("MAPPED_TOKEN_NOT_CAPTURED")
+        if row_priced:
+            diagnostics["PRICED_AT_LEAST_ONE_SIDE"]+=1
+        else:
+            for reason in sorted(row_reasons or {"NO_AFFORDABLE_CONTRACT_DEPTH"}):
+                diagnostics[reason]+=1
     result["rows"].sort(key=lambda r:Decimal(r["scenario"]["hypothetical_net_usd"]),reverse=True)
     result["candidate_scenarios"]=len(result["rows"])
     result["near_misses"].sort(key=lambda x:Decimal(x["scenario"]["hypothetical_net_usd"]),reverse=True)
     result["mapped_pairs_priced"]=len(result["near_misses"])
+    result["pricing_diagnostics"]=dict(sorted(diagnostics.items()))
+    result["pricing_diagnostics_note"]="Priced side scenarios may exceed unique sampled pairs; unpriced reasons may overlap."
     return result
 
 if __name__=="__main__":
