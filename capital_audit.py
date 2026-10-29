@@ -46,6 +46,8 @@ def audit(report):
                 raise ValueError("Invalid modeled cost component")
             if sum(components)!=cost:
                 raise ValueError("Displayed legs plus modeled fees and FX do not reconcile")
+            if kalshi<displayed_k or poly<displayed_p:
+                raise ValueError("Platform funding reserve below displayed purchase")
             if gain != Decimal(n)-cost:
                 raise ValueError("Net profit accounting mismatch")
         except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
