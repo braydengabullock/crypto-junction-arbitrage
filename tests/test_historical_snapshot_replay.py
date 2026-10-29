@@ -18,6 +18,14 @@ class HistoricalReplayTests(unittest.TestCase):
         self.assertEqual(r["total_positive_candidate_observations"],1)
         self.assertFalse(r["historical_execution_verified"])
         self.assertFalse(r["trade_allowed"])
+    def test_repeated_market_sightings_not_counted_as_separate_trades(self):
+        archive={"source_type":"archived_public_orderbook_observations","captures":[
+            capture("2026-09-01T12:00:00Z",price="0.64"),
+            capture("2026-09-01T16:00:00Z",price="0.63")]}
+        r=replay(archive,poly_rate="0",kalshi_multiplier="0",extra_cost="0")
+        self.assertEqual(r["total_positive_candidate_observations"],2)
+        self.assertEqual(r["distinct_positive_market_pairs_observed"],1)
+        self.assertEqual(r["independent_profitable_trades_established"],0)
     def test_unknown_provenance_rejected(self):
         with self.assertRaises(ValueError):
             replay({"source_type":"synthetic_fixture","captures":[]})
