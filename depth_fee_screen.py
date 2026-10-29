@@ -21,7 +21,7 @@ def roi_tier(profit, cost):
         return "HIGHER_PRIORITY_0_5_PLUS"
     return "SMALL_POSITIVE"
 
-def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="5000",fx_cost=None,opposing_tokens=None):
+def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget="5000",per_venue_budget="2500",fx_cost=None,opposing_tokens=None):
     result={"research_only":True,"trade_allowed":False,"fee_inputs_verified":False,
             "market_rules_verified":False,"net_profit_verified":False,
             "status":"FEE_INPUTS_REQUIRED","rows":[],"near_misses":[]}
@@ -29,9 +29,12 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
         return result
     cap=positive(budget)
     if cap>5000: raise ValueError("Combined $5,000 research budget ceiling")
+    venue_cap=positive(per_venue_budget)
+    if venue_cap>2500: raise ValueError("Per-venue $2,500 research ceiling")
     fixed=positive(extra_cost); rate=positive(poly_rate); mult=positive(kalshi_multiplier)
     fx=positive(fx_cost) if fx_cost is not None else Decimal("0")
     result["max_combined_research_budget_usd"]=str(cap)
+    result["max_per_venue_research_budget_usd"]=str(venue_cap)
     result["fx_cost_supplied"]=fx_cost is not None
     result["fx_cost_assumed_usd"]=str(fx)
     result["status"]="OPPOSING_OUTCOME_MAPPING_REQUIRED" if opposing_tokens is None else "ILLUSTRATIVE_ONLY_UNVERIFIED_RULES_AND_FEES"
@@ -75,9 +78,13 @@ def screen(data, *, poly_rate=None,kalshi_multiplier=None,extra_cost=None,budget
                         kfee=kalshi_general_taker_fee(n,kp,multiplier=mult)
                         pfee=polymarket_sports_taker_fee(n,pp,rate=rate)
                         total=Decimal(kc["displayed_cost_usd"])+Decimal(pc["displayed_cost_usd"])+kfee+pfee+fixed+fx
-                        if total>cap: break
+                        kalshi_required=Decimal(kc["displayed_cost_usd"])+kfee
+                        polymarket_required=Decimal(pc["displayed_cost_usd"])+pfee
+                        if total>cap or kalshi_required>venue_cap or polymarket_required>venue_cap: break
                         profit=Decimal(n)-total
                         allocation={"kalshi_displayed_usd":str(kc["displayed_cost_usd"]),
+                                    "kalshi_with_modeled_fee_usd":str(kalshi_required),
+                                    "polymarket_with_modeled_fee_usd":str(polymarket_required),
                                     "polymarket_displayed_usd":str(pc["displayed_cost_usd"]),
                                     "modeled_fees_and_extra_usd":str(kfee+pfee+fixed),
                                     "assumed_fx_cost_usd":str(fx),
@@ -145,6 +152,7 @@ if __name__=="__main__":
     a.add_argument("--kalshi-multiplier")
     a.add_argument("--extra-cost")
     a.add_argument("--budget",default="5000",help="Maximum combined research cost in USD, up to 5000")
+    a.add_argument("--per-venue-budget",default="2500",help="Maximum displayed purchase plus modeled fee on each venue in USD, up to 2500")
     a.add_argument("--fx-cost",help="Explicit modeled USD currency-conversion cost; omit when unknown")
     a.add_argument("--opposing-token-map",help="Reviewed ticker|side to opposite Polymarket token mapping JSON")
     z=a.parse_args()
@@ -154,7 +162,7 @@ if __name__=="__main__":
         if mapping.get("mapping_method")!="exact_event_id_and_two_unambiguous_outcome_labels" or mapping.get("market_rules_verified") is not False:
             raise ValueError("Unsupported or incorrectly certified outcome mapping")
         mapping=mapping["opposing_token_map"]
-    out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,budget=z.budget,fx_cost=z.fx_cost,opposing_tokens=mapping)
+    out=screen(data,poly_rate=z.poly_rate,kalshi_multiplier=z.kalshi_multiplier,extra_cost=z.extra_cost,budget=z.budget,per_venue_budget=z.per_venue_budget,fx_cost=z.fx_cost,opposing_tokens=mapping)
     Path(z.output).write_text(json.dumps(out,indent=2),encoding="utf-8")
     print(json.dumps({"status":out["status"],"candidate_scenarios":len(out["rows"]),
                       "net_profit_verified":False,"mapped_pairs_priced":out.get("mapped_pairs_priced",0),
