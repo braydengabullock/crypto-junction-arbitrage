@@ -10,10 +10,17 @@ class CollectorBenchmarkTests(unittest.TestCase):
         self.assertEqual(r["simulated_total_requests"],18)
         self.assertEqual(r["cycles_within_target"],2)
         self.assertFalse(r["trade_allowed"])
+    def test_parallel_worker_benchmark_preserves_request_count(self):
+        r=benchmark(pairs=4,iterations=1,latency_ms=0,workers=4)
+        self.assertEqual(r["workers"],4)
+        self.assertEqual(r["simulated_requests_per_cycle"],12)
+        self.assertEqual(r["archived_snapshots"],1)
     def test_rejects_excessive_benchmark_workload(self):
         with self.assertRaises(ValueError):
             benchmark(pairs=31)
         with self.assertRaises(ValueError):
             benchmark(latency_ms=1001)
+        with self.assertRaises(ValueError):
+            benchmark(workers=5)
 if __name__=="__main__":
     unittest.main()
