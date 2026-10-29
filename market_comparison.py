@@ -111,6 +111,11 @@ def compare(kalshi, polymarket, *, threshold=0.55, max_results=100):
             other_words=candidate_words(other)
             score=candidate_score(words,other_words)
             ident_match=sports_identifier_match(market,other)
+            # Structured game tickers require league, teams and date agreement.
+            # Title overlap alone can confuse sports with elections or futures.
+            structured_game = re.match(r"^KX(?:NBA|NFL|NHL|MLB|WNBA)GAME-", str(market.get("ticker") or "").upper())
+            if structured_game and not ident_match:
+                continue
             if score >= threshold or ident_match:
                 results.append({
                     "kalshi_ticker":market.get("ticker"),
