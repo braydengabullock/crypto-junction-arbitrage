@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: "23 */4 * * *"
+    - cron: "*/15 * * * *"
 permissions:
   contents: read
   actions: read
@@ -70,7 +70,7 @@ jobs:
         run: |
           mkdir -p historical_prior
           ARCHIVES=(historical_capture_archive.json)
-          IDS="$(gh run list --workflow market_comparison.yml --status success --limit 12 --json databaseId --jq '.[].databaseId')"
+          IDS="$(gh run list --workflow market_comparison.yml --status completed --limit 24 --json databaseId --jq '.[].databaseId')"
           for ID in $IDS; do
             if [ "$ID" = "${{ github.run_id }}" ]; then continue; fi
             mkdir -p "historical_prior/$ID"
