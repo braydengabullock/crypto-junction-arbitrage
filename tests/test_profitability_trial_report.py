@@ -15,11 +15,11 @@ class ProfitabilityTrialTests(unittest.TestCase):
         self.assertFalse(out["trade_allowed"])
     def test_stale_quote_does_not_pass_quality(self):
         out=evaluate(sample(window=False))
-        self.assertEqual(out["candidate_pairs_at_least_2_pct_modeled_roi"],1)
+        self.assertEqual(out["candidate_pairs_eligible_for_research"],1)
         self.assertEqual(out["positive_candidates_with_short_quote_window"],0)
     def test_small_positive_return_is_still_included(self):
         out=evaluate(sample(roi=False))
-        self.assertEqual(out["candidate_pairs_at_least_2_pct_modeled_roi"],0)
+        self.assertEqual(out["candidate_pairs_eligible_for_research"],1)
     def test_missing_qualifying_sample(self):
         out=evaluate({"rows":[],"near_misses":[]})
         self.assertEqual(out["conclusion"],"NO_POSITIVE_MODELED_CANDIDATES_IN_THIS_SAMPLE")
