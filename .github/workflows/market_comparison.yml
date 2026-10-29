@@ -70,16 +70,17 @@ jobs:
         run: |
           mkdir -p historical_prior
           ARCHIVES=(historical_capture_archive.json)
-          IDS="$(gh run list --workflow market_comparison.yml --status completed --limit 24 --json databaseId --jq '.[].databaseId')"
+          IDS="$(gh run list --workflow market_comparison.yml --status completed --limit 100 --json databaseId --jq '.[].databaseId')"
           for ID in $IDS; do
             if [ "$ID" = "${{ github.run_id }}" ]; then continue; fi
             mkdir -p "historical_prior/$ID"
-            if gh run download "$ID" --name "cross-exchange-research-$ID" --dir "historical_prior/$ID" 2>/dev/null; then
+            if timeout 5s gh run download "$ID" --name "cross-exchange-research-$ID" --dir "historical_prior/$ID" 2>/dev/null; then
               if [ -s "historical_prior/$ID/historical_capture_archive.json" ]; then
                 ARCHIVES+=("historical_prior/$ID/historical_capture_archive.json")
               fi
             fi
           done
+          echo "Historical archives found: ${#ARCHIVES[@]} (including current run)"
           python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output multi_run_historical_archive.json
           python historical_snapshot_replay.py --archive multi_run_historical_archive.json --output multi_run_historical_replay.json
           python capture_cadence_report.py --archive multi_run_historical_archive.json --output capture_cadence_report.json
