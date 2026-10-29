@@ -1,0 +1,295 @@
+name: 24-hour public orderbook observation (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: twenty-four-hour-public-observation
+  cancel-in-progress: false
+jobs:
+  window_1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate research code
+        run: python -m unittest discover -s tests -v
+      - name: Refresh public metadata and research mapping
+        run: |
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
+      - name: Save immutable research mapping for all windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-mapping
+          path: |
+            research_matches.json
+            opposing_token_map.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Collect four-hour window 1 (read only)
+        run: |
+          mkdir -p observation_window_1
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_1 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_1.log
+      - name: Inspect window 1 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_1 > observation_window_1_health.json
+          cat observation_window_1_health.json
+      - name: Preserve window 1 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-1
+          path: |
+            observation_window_1/*.json
+            observation_window_1.log
+            observation_window_1_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 1 progress summary
+        if: always()
+        run: |
+          echo '### Window 1 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_1_health.json ]; then cat observation_window_1_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  window_2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: window_1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original research mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: observation-mapping
+          path: .
+      - name: Collect four-hour window 2 (read only)
+        run: |
+          mkdir -p observation_window_2
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_2 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_2.log
+      - name: Inspect window 2 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_2 > observation_window_2_health.json
+          cat observation_window_2_health.json
+      - name: Preserve window 2 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-2
+          path: |
+            observation_window_2/*.json
+            observation_window_2.log
+            observation_window_2_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 2 progress summary
+        if: always()
+        run: |
+          echo '### Window 2 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_2_health.json ]; then cat observation_window_2_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  window_3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: window_2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original research mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: observation-mapping
+          path: .
+      - name: Collect four-hour window 3 (read only)
+        run: |
+          mkdir -p observation_window_3
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_3 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_3.log
+      - name: Inspect window 3 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_3 > observation_window_3_health.json
+          cat observation_window_3_health.json
+      - name: Preserve window 3 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-3
+          path: |
+            observation_window_3/*.json
+            observation_window_3.log
+            observation_window_3_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 3 progress summary
+        if: always()
+        run: |
+          echo '### Window 3 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_3_health.json ]; then cat observation_window_3_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  window_4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: window_3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original research mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: observation-mapping
+          path: .
+      - name: Collect four-hour window 4 (read only)
+        run: |
+          mkdir -p observation_window_4
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_4 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_4.log
+      - name: Inspect window 4 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_4 > observation_window_4_health.json
+          cat observation_window_4_health.json
+      - name: Preserve window 4 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-4
+          path: |
+            observation_window_4/*.json
+            observation_window_4.log
+            observation_window_4_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 4 progress summary
+        if: always()
+        run: |
+          echo '### Window 4 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_4_health.json ]; then cat observation_window_4_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  window_5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: window_4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original research mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: observation-mapping
+          path: .
+      - name: Collect four-hour window 5 (read only)
+        run: |
+          mkdir -p observation_window_5
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_5 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_5.log
+      - name: Inspect window 5 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_5 > observation_window_5_health.json
+          cat observation_window_5_health.json
+      - name: Preserve window 5 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-5
+          path: |
+            observation_window_5/*.json
+            observation_window_5.log
+            observation_window_5_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 5 progress summary
+        if: always()
+        run: |
+          echo '### Window 5 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_5_health.json ]; then cat observation_window_5_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  window_6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: window_5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original research mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: observation-mapping
+          path: .
+      - name: Collect four-hour window 6 (read only)
+        run: |
+          mkdir -p observation_window_6
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir observation_window_6 --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 240 | tee observation_window_6.log
+      - name: Inspect window 6 evidence
+        if: always()
+        run: |
+          python collector_health.py --archive-dir observation_window_6 > observation_window_6_health.json
+          cat observation_window_6_health.json
+      - name: Preserve window 6 checkpoint even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-window-6
+          path: |
+            observation_window_6/*.json
+            observation_window_6.log
+            observation_window_6_health.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish window 6 progress summary
+        if: always()
+        run: |
+          echo '### Window 6 of 6 — public research only' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_window_6_health.json ]; then cat observation_window_6_health.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'Snapshots are not atomic and market settlement equivalence is unverified.' >> "$GITHUB_STEP_SUMMARY"
+  final_report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: window_6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: observation-window-*
+          path: observation_all
+          merge-multiple: false
+      - name: Replay all archived public observations
+        run: |
+          python local_historical_backtest.py --archive-dir observation_all --output-dir observation_final | tee observation_final_summary.json
+      - name: Preserve final analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-final-report
+          path: |
+            observation_final/*.json
+            observation_final_summary.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish final summary
+        if: always()
+        run: |
+          echo '### Six-window research observation' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f observation_final_summary.json ]; then cat observation_final_summary.json >> "$GITHUB_STEP_SUMMARY"; fi
+          echo 'This is retrospective research, not executable or guaranteed arbitrage.' >> "$GITHUB_STEP_SUMMARY"
