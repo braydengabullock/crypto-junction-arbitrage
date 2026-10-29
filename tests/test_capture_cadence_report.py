@@ -10,11 +10,15 @@ class CadenceTests(unittest.TestCase):
     def test_empty_archive_never_claims_complete(self):
         r=evaluate(doc(),as_of=FIXED)
         self.assertEqual(r["capture_count_in_window"],0)
+        self.assertEqual(r["estimated_missing_captures_in_full_window"],96)
         self.assertFalse(r["complete_24_hour_monitoring_verified"])
     def test_regular_interval(self):
         r=evaluate(doc("2026-10-28T00:00:00Z","2026-10-28T00:15:00Z","2026-10-28T00:30:00Z"),as_of=FIXED)
         self.assertEqual(r["estimated_missing_captures_within_observed_span"],0)
         self.assertEqual(r["market_rows_observed_in_window"],3)
+        self.assertEqual(r["expected_captures_in_full_window"],96)
+        self.assertEqual(r["estimated_missing_captures_in_full_window"],93)
+        self.assertEqual(r["trailing_unobserved_gap_minutes"],15)
         self.assertFalse(r["complete_24_hour_monitoring_verified"])
     def test_gap_is_not_hidden(self):
         r=evaluate(doc("2026-10-28T00:00:00Z","2026-10-28T00:45:00Z"),as_of=FIXED)
