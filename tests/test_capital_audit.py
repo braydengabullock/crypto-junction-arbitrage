@@ -4,7 +4,9 @@ from capital_audit import audit
 def report(cost="20", gain="0", k="10", p="10"):
     s={"contracts_each":20,"total_cost_usd":cost,"hypothetical_net_usd":gain,
        "venue_allocation":{"kalshi_conservative_funding_reserve_usd":k,
-                           "polymarket_conservative_funding_reserve_usd":p}}
+                           "polymarket_conservative_funding_reserve_usd":p,
+                           "kalshi_displayed_usd":"10","polymarket_displayed_usd":"10",
+                           "modeled_fees_and_extra_usd":"0","assumed_fx_cost_usd":"0"}}
     return {"research_only":True,"max_combined_research_budget_usd":"5000",
             "max_per_venue_research_budget_usd":"2500",
             "rows":[{"scenario":s,"max_roi_scenario":s}],"near_misses":[]}
@@ -34,6 +36,10 @@ class CapitalAuditTests(unittest.TestCase):
     def test_nonfinite_contract_quantity_rejected(self):
         sample=report()
         sample["rows"][0]["scenario"]["contracts_each"]="Infinity"
+        self.assertFalse(audit(sample)["capital_audit_passed"])
+    def test_cost_components_must_reconcile(self):
+        sample=report()
+        sample["rows"][0]["scenario"]["venue_allocation"]["assumed_fx_cost_usd"]="0.01"
         self.assertFalse(audit(sample)["capital_audit_passed"])
     def test_nonfinite_rejected(self):
         self.assertFalse(audit(report(k="NaN"))["capital_audit_passed"])
