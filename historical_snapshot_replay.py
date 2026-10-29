@@ -21,9 +21,9 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
            fx_cost=None,budget="5000",per_venue_budget="2500"):
     if not isinstance(archive.get("captures"),list):
         raise ValueError("Archive needs captures list")
-    if archive.get("source_type")!="archived_public_orderbook_observations":
+    if archive.get("source_type")!="archived_public_orderbook_observations" or archive.get("trade_allowed") is True:
         raise ValueError("Explicit archival provenance required")
-    results=[];rejected=[];seen=set()
+    results=[];rejected=[];seen=set();unique_positive_pairs=set()
     for index,capture in enumerate(archive["captures"]):
         try:
             if not isinstance(capture,dict): raise ValueError("Invalid capture")
@@ -49,6 +49,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
                               if n.get("kalshi_ticker")==item.get("kalshi_ticker")
                               and n.get("kalshi_side")==item.get("kalshi_side")
                               and str(n.get("polymarket_token_id"))==str(item.get("polymarket_token_id"))),{})
+                unique_positive_pairs.add((str(item.get("kalshi_ticker")),str(item.get("kalshi_side")),str(item.get("polymarket_token_id"))))
                 scenarios.append({"kalshi_ticker":item.get("kalshi_ticker"),
                     "side":item.get("kalshi_side"),
                     "polymarket_token_id":item.get("polymarket_token_id"),
@@ -73,6 +74,8 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
         "last_capture_at":times[-1].isoformat() if times else None,
         "observed_timespan_days":str(Decimal(str((times[-1]-times[0]).total_seconds()))/Decimal("86400")) if len(times)>1 else "0",
         "total_positive_candidate_observations":sum(x["modeled_positive_candidates"] for x in results),
+        "distinct_positive_market_pairs_observed":len(unique_positive_pairs),
+        "independent_profitable_trades_established":0,
         "total_priced_pair_observations":sum(x["pairs_with_modeled_prices"] for x in results),
         "eligibility_rule":"modeled_net_usd_strictly_greater_than_zero_no_minimum_roi",
         "max_combined_budget_usd":"5000","max_per_venue_budget_usd":"2500",
