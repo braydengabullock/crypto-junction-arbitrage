@@ -20,8 +20,11 @@ jobs:
         run: |
           python -m unittest discover -s tests -v 2>&1 | tee offline_test_results.txt
           exit ${PIPESTATUS[0]}
-      - name: Benchmark 30-pair simulated read-only capture
-        run: python collector_benchmark.py --pairs 30 --iterations 3 --interval-seconds 60 --latency-ms 250 --output collector_benchmark.json
+      - name: Compare 30-pair offline worker performance (no network)
+        run: |
+          python collector_benchmark.py --pairs 30 --iterations 1 --interval-seconds 60 --latency-ms 100 --workers 1 --output collector_benchmark_1_worker.json
+          python collector_benchmark.py --pairs 30 --iterations 1 --interval-seconds 60 --latency-ms 100 --workers 2 --output collector_benchmark_2_workers.json
+          python collector_benchmark.py --pairs 30 --iterations 1 --interval-seconds 60 --latency-ms 100 --workers 4 --output collector_benchmark_4_workers.json
       - name: Upload offline test evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -29,7 +32,7 @@ jobs:
           name: crypto-junction-offline-tests-${{ github.run_id }}
           path: |
             offline_test_results.txt
-            collector_benchmark.json
+            collector_benchmark_*_workers.json
           if-no-files-found: warn
           retention-days: 14
       - name: Explain scope
