@@ -27,6 +27,14 @@ class CapitalAuditTests(unittest.TestCase):
         self.assertFalse(audit(report(cost="5000.01"))["capital_audit_passed"])
     def test_net_accounting_inconsistent(self):
         self.assertFalse(audit(report(gain="0.01"))["capital_audit_passed"])
+    def test_fractional_contract_quantity_rejected(self):
+        sample=report()
+        sample["rows"][0]["scenario"]["contracts_each"]="20.5"
+        self.assertFalse(audit(sample)["capital_audit_passed"])
+    def test_nonfinite_contract_quantity_rejected(self):
+        sample=report()
+        sample["rows"][0]["scenario"]["contracts_each"]="Infinity"
+        self.assertFalse(audit(sample)["capital_audit_passed"])
     def test_nonfinite_rejected(self):
         self.assertFalse(audit(report(k="NaN"))["capital_audit_passed"])
 
