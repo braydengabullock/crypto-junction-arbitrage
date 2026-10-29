@@ -65,7 +65,7 @@ jobs:
         run: python capital_efficiency.py --input depth_fee_illustrative.json --output capital_efficiency.json
       - name: Diagnose raw spread versus modeled friction
         run: python opportunity_economics.py --input depth_fee_illustrative.json --output opportunity_economics.json
-      - name: Count modeled two-percent research candidates with quote-quality caveats
+      - name: Count positive modeled research candidates with quote-quality caveats
         run: python profitability_trial_report.py --input depth_fee_illustrative.json --output profitability_trial_report.json
       - name: Audit research sizing against combined and per-platform capital ceilings
         run: python capital_audit.py --input depth_fee_illustrative.json --output capital_audit.json
@@ -180,7 +180,7 @@ jobs:
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("capital_efficiency.json", ("matched_scenarios_compared", "different_size_count", "net_profit_verified")),
-              ("profitability_trial_report.json", ("candidate_pairs_with_positive_modeled_net", "candidate_pairs_at_least_2_pct_modeled_roi", "at_target_with_short_quote_window_and_ten_contract_depth", "verified_profitable_opportunities")),
+              ("profitability_trial_report.json", ("candidate_pairs_with_positive_modeled_net", "candidate_pairs_eligible_for_research", "positive_candidates_with_short_window_and_ten_contract_depth", "verified_profitable_opportunities")),
               ("research_pipeline_diagnostic.json", ("rows_sampled", "mapped_pairs_with_modeled_costs", "positive_modeled_profit_candidates", "capital_audit_status", "unverified_cost_input_caveat")),
               ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts", "by_league")),
               ("watchlist_trends.json", ("comparable_pairs",)),
