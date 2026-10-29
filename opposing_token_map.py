@@ -49,10 +49,18 @@ def make_mapping(matches):
         if len(kcode)!=3: continue
         key=(event,str(c.get("polymarket_id")),str(c.get("polymarket_slug")))
         grouped.setdefault(key,[]).append(c)
-    # A ticker shared by distinct Polymarket markets cannot be safely keyed by ticker alone.\n    # Fail closed instead of silently overwriting an earlier token assignment.\n    ticker_markets={}\n    for (_,market_id,slug), cs in grouped.items():\n        for c in cs:\n            ticker_markets.setdefault(c["kalshi_ticker"],set()).add((market_id,slug))\n    ambiguous_tickers={ticker for ticker,markets in ticker_markets.items() if len(markets)>1}\n    mapping={}; evidence=[]
+    # A ticker shared by distinct Polymarket markets cannot be safely keyed by ticker alone.
+    # Fail closed instead of silently overwriting an earlier token assignment.
+    ticker_markets={}
+    for (_,market_id,slug), cs in grouped.items():
+        for c in cs:
+            ticker_markets.setdefault(c["kalshi_ticker"],set()).add((market_id,slug))
+    ambiguous_tickers={ticker for ticker,markets in ticker_markets.items() if len(markets)>1}
+    mapping={}; evidence=[]
     for (event,market_id,slug),cs in grouped.items():
         code_to_row={c["kalshi_ticker"][-3:]:c for c in cs}
-        if len(code_to_row)!=2 or len(cs)!=2: continue\n        if any(c["kalshi_ticker"] in ambiguous_tickers for c in cs): continue
+        if len(code_to_row)!=2 or len(cs)!=2: continue
+        if any(c["kalshi_ticker"] in ambiguous_tickers for c in cs): continue
         codes=set(code_to_row)
         league=event.split("GAME-",1)[0].removeprefix("KX")
         teams={"NBA":NBA_TEAMS,"NHL":NHL_TEAMS}.get(league)
