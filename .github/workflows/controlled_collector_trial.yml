@@ -27,6 +27,18 @@ jobs:
           test -n "$P"
           python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
           python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
+      - name: Report conservative mapping exclusions
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('opposing_token_map.json'))
+          print(json.dumps({
+            'mapped_ticker_sides':m.get('mapped_pairs',0),
+            'ambiguous_tickers_rejected':m.get('ambiguous_tickers_rejected',0),
+            'market_rules_verified':m.get('market_rules_verified'),
+            'research_only':m.get('research_only')
+          },indent=2))
+          PY
       - name: Run FIVE bounded live read-only collector cycles
         run: |
           python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir controlled_trial_archives --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 5 | tee controlled_trial_output.txt
