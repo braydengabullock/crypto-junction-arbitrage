@@ -53,6 +53,15 @@ class CandidateBookTests(unittest.TestCase):
         self.assertEqual(r["unsampled_eligible_candidates"],1)
         self.assertEqual(r["collection_diagnostics"]["MISSING_IDENTIFIERS"],1)
 
+    def test_maximum_30_paired_snapshots_remains_bounded(self):
+        candidates=[{"kalshi_ticker":f"KXNBAGAME-26OCT28AB{i}-A",
+                     "polymarket_clob_token_ids":'["123"]'} for i in range(35)]
+        r=collect(candidates,max_pairs=30,fetch_k=lambda _ :{"orderbook_fp":{}},
+                  fetch_p=lambda _ :{"asks":[]})
+        self.assertEqual(r["sampled_candidates"],30)
+        self.assertEqual(r["unsampled_eligible_candidates"],5)
+        with self.assertRaises(ValueError):
+            collect(candidates,max_pairs=31)
     def test_no_tokens_no_request(self):
         r=collect([{"kalshi_ticker":"K","polymarket_clob_token_ids":None}])
         self.assertTrue(r["rows"][0]["errors"])
