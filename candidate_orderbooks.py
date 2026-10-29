@@ -25,7 +25,7 @@ def parse_tokens(value):
 
 def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             fetch_p=fetch_polymarket_book, allowed_tickers=None):
-    if not isinstance(candidates,list) or not 1<=max_pairs<=20:
+    if not isinstance(candidates,list) or not 1<=max_pairs<=30:
         raise ValueError("Invalid candidates or cap")
     rows=[]
     selected=[c for c in candidates if allowed_tickers is None or c.get("kalshi_ticker") in allowed_tickers]
