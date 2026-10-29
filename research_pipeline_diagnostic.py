@@ -39,9 +39,19 @@ def diagnose(books, pricing, capital, efficiency):
         bottleneck="CAPITAL_AUDIT_FAILED"
     else:
         bottleneck="REQUIRES_INDEPENDENT_VERIFICATION"
+    actions={
+        "NO_BOOK_SAMPLES":"Review market discovery and sampling coverage before assessing prices.",
+        "MISSING_BOOK_DATA":"Investigate venue fetch errors and unavailable order books.",
+        "MISSING_OUTCOME_MAPPING":"Review event identifiers and opposing outcome labels; do not infer from titles.",
+        "NO_PRICED_PAIRS_UNDETERMINED_CAUSE":"Inspect mapped token IDs, book levels, and capital constraints; profitability is unknown.",
+        "NO_POSITIVE_MODELED_RETURNS":"Examine modeled spread, fee assumptions, and displayed depth without claiming an executable opportunity.",
+        "NO_POSITIVE_MODELED_RETURNS_NOT_ESTABLISHED":"Review incomplete pricing evidence before drawing profit conclusions.",
+        "CAPITAL_AUDIT_FAILED":"Investigate funding allocation and accounting audit discrepancies.",
+        "REQUIRES_INDEPENDENT_VERIFICATION":"Independently verify settlement, fees, quote quality, FX and venue eligibility before any execution decision.",
+    }
     data={
         "research_only":True,"trade_allowed":False,"verified_opportunities":0,
-        "rows_sampled":len(rows),"primary_research_bottleneck":bottleneck,"book_collection_categories":dict(reasons),
+        "rows_sampled":len(rows),"primary_research_bottleneck":bottleneck,"next_research_action":actions[bottleneck],"book_collection_categories":dict(reasons),
         "rows_with_both_venue_observations":booked_both,
         "rows_with_incomplete_venue_observations":incomplete_book_count,
         "partial_market_data_coverage":incomplete_book_count>0,
