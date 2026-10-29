@@ -1,12 +1,15 @@
 name: Controlled high-frequency collector trial (read only)
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/controlled_collector_trial.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   trial:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,17 +27,21 @@ jobs:
           test -n "$P"
           python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
           python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
-      - name: Run ONE bounded live read-only collector cycle
+      - name: Run FIVE bounded live read-only collector cycles
         run: |
-          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir controlled_trial_archives --max-pairs 3 --workers 1 --interval-seconds 60 --iterations 1 | tee controlled_trial_output.txt
+          python continuous_book_collector.py --matches research_matches.json --mapping opposing_token_map.json --output-dir controlled_trial_archives --max-pairs 30 --workers 2 --interval-seconds 60 --iterations 5 | tee controlled_trial_output.txt
           python collector_health.py --archive-dir controlled_trial_archives | tee controlled_trial_health.json
           python local_historical_backtest.py --archive-dir controlled_trial_archives --output-dir controlled_trial_backtest | tee controlled_trial_backtest_summary.json
       - name: Explain trial scope
         if: always()
         run: |
-          echo '### One-cycle read-only public-data collector trial' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Maximum 3 mapped research candidates, one pass; NO account access or trading.' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Five-cycle read-only public-data collector trial' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Maximum 30 mapped research candidates, 5 sampling cycles at 60-second intervals with 2 workers; NO account access or trading.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Stored market books are non-atomic and mapping settlement rules remain unverified.' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f controlled_trial_backtest_summary.json ]; then
+            echo '#### Preliminary historical replay' >> "$GITHUB_STEP_SUMMARY"
+            cat controlled_trial_backtest_summary.json >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -f controlled_trial_output.txt ]; then
             cat controlled_trial_output.txt >> "$GITHUB_STEP_SUMMARY"
           else
