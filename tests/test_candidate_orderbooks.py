@@ -62,6 +62,15 @@ class CandidateBookTests(unittest.TestCase):
         self.assertEqual(r["unsampled_eligible_candidates"],5)
         with self.assertRaises(ValueError):
             collect(candidates,max_pairs=31)
+    def test_parallel_capture_preserves_pair_order_and_timestamps(self):
+        candidates=[{"kalshi_ticker":f"K{i}","polymarket_clob_token_ids":'["123"]'} for i in range(4)]
+        result=collect(candidates,max_pairs=4,workers=2,
+            fetch_k=lambda _ :{"orderbook_fp":{}},fetch_p=lambda _ :{"asks":[]})
+        self.assertEqual(result["worker_count"],2)
+        self.assertEqual([r["kalshi_ticker"] for r in result["rows"]],[f"K{i}" for i in range(4)])
+        self.assertTrue(all(len(r["observations"])==2 for r in result["rows"]))
+        with self.assertRaises(ValueError):
+            collect(candidates,workers=5)
     def test_no_tokens_no_request(self):
         r=collect([{"kalshi_ticker":"K","polymarket_clob_token_ids":None}])
         self.assertTrue(r["rows"][0]["errors"])
