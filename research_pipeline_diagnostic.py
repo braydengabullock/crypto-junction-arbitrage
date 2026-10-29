@@ -20,16 +20,21 @@ def diagnose(books, pricing, capital, efficiency):
             reasons["BOOKS_PRESENT_NO_RECORDED_FETCH_ERRORS"]+=1
     priced_count=len(priced)
     positive_count=len(positive)
+    nonpositive_count=sum(1 for x in priced if x.get("scenario",{}).get("net_roi_tier")=="NONPOSITIVE_REJECT")
+    booked_both=sum(1 for r in rows if {"kalshi","polymarket"}.issubset({o.get("venue") for o in r.get("observations",[]) if isinstance(o,dict)}))
+    incomplete_book_count=len(rows)-booked_both
     if not rows:
         bottleneck="NO_BOOK_SAMPLES"
-    elif reasons["MISSING_ONE_OR_BOTH_BOOKS"]==len(rows):
+    elif incomplete_book_count==len(rows):
         bottleneck="MISSING_BOOK_DATA"
     elif pricing.get("status")=="OPPOSING_OUTCOME_MAPPING_REQUIRED":
         bottleneck="MISSING_OUTCOME_MAPPING"
     elif not priced_count and not positive_count:
         bottleneck="NO_PRICED_PAIRS_UNDETERMINED_CAUSE"
-    elif positive_count==0:
+    elif positive_count==0 and nonpositive_count>0:
         bottleneck="NO_POSITIVE_MODELED_RETURNS"
+    elif positive_count==0:
+        bottleneck="NO_POSITIVE_MODELED_RETURNS_NOT_ESTABLISHED"
     elif capital.get("capital_audit_passed") is False:
         bottleneck="CAPITAL_AUDIT_FAILED"
     else:
@@ -37,10 +42,15 @@ def diagnose(books, pricing, capital, efficiency):
     data={
         "research_only":True,"trade_allowed":False,"verified_opportunities":0,
         "rows_sampled":len(rows),"primary_research_bottleneck":bottleneck,"book_collection_categories":dict(reasons),
+        "rows_with_both_venue_observations":booked_both,
+        "rows_with_incomplete_venue_observations":incomplete_book_count,
+        "partial_market_data_coverage":incomplete_book_count>0,
         "opposing_mapping_screen_status":pricing.get("status","UNKNOWN"),
         "mapped_pairs_with_modeled_costs":priced_count,
+        "priced_pairs_with_positive_best_scenario":positive_count,
+        "priced_pairs_with_nonpositive_best_scenario":nonpositive_count,
         "positive_modeled_profit_candidates":positive_count,
-        "nonpositive_priced_pairs":sum(1 for x in priced if x.get("scenario",{}).get("net_roi_tier")=="NONPOSITIVE_REJECT"),
+        "nonpositive_priced_pairs":nonpositive_count,
         "capital_audit_status":capital.get("evidence_status","UNKNOWN"),
         "capital_audit_checked":capital.get("scenarios_checked",0),
         "capital_audit_issues":capital.get("issues",[]),
