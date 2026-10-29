@@ -1,10 +1,11 @@
 {
-  "budget_usd": 100,
-  "min_net_roi_pct": 2,
+  "budget_usd": 5000,
+  "max_per_exchange_usd": 2500,
+  "min_net_roi_pct": 0,
+  "profitability_rule": "strictly_positive_net_after_modeled_costs",
   "max_payout_hours": 2,
   "max_quote_age_seconds": 20,
   "max_clock_skew_seconds": 5,
-  "max_portfolio_exposure_pct": 25,
-  "reserve_per_platform_pct": 30,
+  "position_sizing": "dynamic",
   "mode": "research_only"
 }
