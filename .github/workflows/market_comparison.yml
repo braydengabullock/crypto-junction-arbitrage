@@ -61,6 +61,8 @@ jobs:
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
       - name: Illustrative NBA fee-and-buffer sensitivity (mapped outcome candidates, not verified rules)
         run: python depth_fee_screen.py --books candidate_orderbooks.json --opposing-token-map opposing_token_map.json --poly-rate 0.05 --kalshi-multiplier 1 --extra-cost 0.25 --budget 5000 --per-venue-budget 2500 --output depth_fee_illustrative.json
+      - name: Compare incremental capital efficiency of hypothetical position sizes
+        run: python capital_efficiency.py --input depth_fee_illustrative.json --output capital_efficiency.json
       - name: Diagnose raw spread versus modeled friction
         run: python opportunity_economics.py --input depth_fee_illustrative.json --output opportunity_economics.json
       - name: Audit research sizing against combined and per-platform capital ceilings
@@ -173,6 +175,7 @@ jobs:
               ("clob_access_diagnostic.json", ("access_conclusion", "requests")),
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
+              ("capital_efficiency.json", ("matched_scenarios_compared", "different_size_count", "net_profit_verified")),
               ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts", "by_league")),
               ("watchlist_trends.json", ("comparable_pairs",)),
               ("settlement_rule_review.json", ("verified_pairs", "records_with_both_rule_texts", "rule_equivalence_verified")),
@@ -371,6 +374,7 @@ jobs:
             candidate_orderbooks.json
             depth_fee_screen.json
             depth_fee_illustrative.json
+            capital_efficiency.json
             capital_audit.json
             opportunity_economics.json
             league_quote_quality_trends.json
