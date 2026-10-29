@@ -1,0 +1,79 @@
+name: Historical snapshot replay (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve available timestamped market captures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p prior_archives
+          SINCE="$(date -u -d '26 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
+          IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId')"
+          ACTIVE=0
+          for ID in $IDS; do
+            (
+              mkdir -p "prior_archives/$ID"
+              timeout 8s gh run download "$ID" --name "cross-exchange-research-$ID" --dir "prior_archives/$ID" >/dev/null 2>&1 || true
+            ) &
+            ACTIVE=$((ACTIVE+1))
+            if [ "$ACTIVE" -ge 8 ]; then wait; ACTIVE=0; fi
+          done
+          wait
+          shopt -s nullglob
+          ARCHIVES=(prior_archives/*/historical_capture_archive.json)
+          if [ "${#ARCHIVES[@]}" -eq 0 ]; then
+            echo '{"source_type":"archived_public_orderbook_observations","research_only":true,"trade_allowed":false,"captures":[]}' > backtest_archive.json
+          else
+            python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output backtest_archive.json
+          fi
+      - name: Run available actual-observation replay
+        run: |
+          python historical_snapshot_replay.py --archive backtest_archive.json --output backtest_results.json
+          python capture_cadence_report.py --archive backtest_archive.json --output backtest_cadence.json
+          python sampling_comparison.py --replay backtest_results.json --output backtest_sampling_comparison.json
+      - name: Summarize evidence and limitations
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as out:
+              out.write("### Crypto Junction — observed historical replay\n")
+              for file in ("backtest_results.json","backtest_cadence.json"):
+                  if not Path(file).exists():
+                      out.write(f"- {file}: unavailable (see job errors)\n")
+                      continue
+                  d=json.loads(Path(file).read_text())
+                  if file=="backtest_results.json":
+                      out.write(f"- Snapshots replayed: {d['capture_count_accepted']}\n")
+                      out.write(f"- Priced observations: {d['total_priced_pair_observations']}\n")
+                      out.write(f"- Positive modeled sightings: {d['total_positive_candidate_observations']}\n")
+                      out.write(f"- Distinct positive market pairs: {d['distinct_positive_market_pairs_observed']}\n")
+                  else:
+                      out.write(f"- Captures in latest 24 hours: {d['capture_count_in_window']}/{d['expected_captures_in_full_window']} target\n")
+                      out.write(f"- Longest observed gap (min): {d['largest_observed_gap_minutes']}\n")
+              out.write("- Research only. No historical fills, market-rule equivalence, actual trading eligibility, fees or FX verified.\n")
+          PY
+      - name: Save historical replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-backtest-${{ github.run_id }}
+          path: |
+            backtest_archive.json
+            backtest_results.json
+            backtest_cadence.json
+            backtest_sampling_comparison.json
+          retention-days: 14
+          if-no-files-found: warn
