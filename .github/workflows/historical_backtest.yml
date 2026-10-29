@@ -22,7 +22,11 @@ jobs:
         run: |
           mkdir -p prior_archives
           SINCE="$(date -u -d '26 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
-          IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId')"
+          if ! IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId' 2>archive_retrieval_error.txt)"; then
+            echo "Historical GitHub API listing failed; no archived runs can be verified in this attempt."
+            cat archive_retrieval_error.txt
+            IDS=""
+          fi
           ACTIVE=0
           for ID in $IDS; do
             (
@@ -36,6 +40,7 @@ jobs:
           shopt -s nullglob
           ARCHIVES=(prior_archives/*/historical_capture_archive.json)
           if [ "${#ARCHIVES[@]}" -eq 0 ]; then
+            echo "NO_ARCHIVES_RECOVERED: replay below is empty, not evidence of zero market opportunities."
             echo '{"source_type":"archived_public_orderbook_observations","research_only":true,"trade_allowed":false,"captures":[]}' > backtest_archive.json
           else
             python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output backtest_archive.json
@@ -78,5 +83,6 @@ jobs:
             backtest_results.json
             backtest_cadence.json
             backtest_sampling_comparison.json
+            archive_retrieval_error.txt
           retention-days: 14
           if-no-files-found: warn
