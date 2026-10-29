@@ -7,6 +7,7 @@ are not verified. Each request is timestamped and errors are recorded.
 import argparse
 import json
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError
@@ -24,8 +25,8 @@ def parse_tokens(value):
         return []
 
 def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
-            fetch_p=fetch_polymarket_book, allowed_tickers=None):
-    if not isinstance(candidates,list) or not 1<=max_pairs<=30:
+            fetch_p=fetch_polymarket_book, allowed_tickers=None, workers=1):
+    if not isinstance(candidates,list) or not 1<=max_pairs<=30 or not 1<=workers<=4:
         raise ValueError("Invalid candidates or cap")
     rows=[]
     selected=[c for c in candidates if allowed_tickers is None or c.get("kalshi_ticker") in allowed_tickers]
@@ -53,7 +54,7 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             seen_events.add(event)
             unique_events.append(candidate)
     sampled=(unique_events+repeated_sides)[:max_pairs]
-    for candidate in sampled:
+    def capture_candidate(candidate):
         tokens=parse_tokens(candidate.get("polymarket_clob_token_ids"))
         ticker=candidate.get("kalshi_ticker")
         row={"kalshi_ticker":ticker,"polymarket_id":candidate.get("polymarket_id"),
@@ -62,7 +63,7 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
              "observations":[],"errors":[]}
         if not ticker or not tokens:
             row["errors"].append("Missing Kalshi ticker or Polymarket token IDs")
-            rows.append(row);continue
+            return row
         try:
             started=now()
             book=fetch_k(ticker)
@@ -82,7 +83,12 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
                 row["errors"].append("Polymarket "+category+" HTTP "+str(exc.code))
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
-        rows.append(row)
+        return row
+    if workers==1:
+        rows=[capture_candidate(candidate) for candidate in sampled]
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            rows=list(pool.map(capture_candidate,sampled))
     # Diagnostic only: mutually exclusive failures before any pricing evaluation.
     for row in rows:
         observations=row["observations"]
@@ -109,13 +115,13 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
         diagnostics_by_league.setdefault(league,Counter())[row["collection_diagnostic"]]+=1
     sampled_event_ids={str(r.get("kalshi_ticker") or "").rsplit("-",1)[0] for r in rows}
     league_counts=Counter(str(r.get("kalshi_ticker") or "").split("GAME-",1)[0].removeprefix("KX") for r in rows)
-    return {"research_only":True,"verified_opportunities":0,
+    return {"research_only":True,"verified_opportunities":0,"worker_count":workers,
             "candidate_count":len(candidates),"eligible_candidate_count":len(selected),"sampled_candidates":len(rows),
             "captured_at":now(),"collection_diagnostics":dict(sorted(diagnostics.items())),
             "collection_diagnostics_by_league":{k:dict(sorted(v.items())) for k,v in sorted(diagnostics_by_league.items())},
             "unsampled_eligible_candidates":len(selected)-len(rows),
             "sampled_leagues":dict(sorted(league_counts.items())),"distinct_events_sampled":len(sampled_event_ids),"rows":rows,
-            "warning":"Sequential public books, potentially unmatched outcomes. No claims of trade eligibility, executable fills or net profit."}
+            "warning":"Sequential books within each pair; optionally concurrent across pairs. Potentially unmatched outcomes. No claims of trade eligibility, executable fills or net profit."}
 
 def main():
     p=argparse.ArgumentParser()
