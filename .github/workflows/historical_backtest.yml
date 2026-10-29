@@ -22,11 +22,15 @@ jobs:
         run: |
           mkdir -p prior_archives
           SINCE="$(date -u -d '26 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
-          if ! IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId' 2>archive_retrieval_error.txt)"; then
-            echo "Historical GitHub API listing failed; no archived runs can be verified in this attempt."
-            cat archive_retrieval_error.txt
+          IDS=""
+          for ATTEMPT in 1 2 3; do
+            if IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId' 2>archive_retrieval_error.txt)"; then
+              break
+            fi
             IDS=""
-          fi
+            echo "GitHub archive listing failed on attempt $ATTEMPT."
+            if [ "$ATTEMPT" -lt 3 ]; then sleep $((ATTEMPT * 15)); fi
+          done
           ACTIVE=0
           for ID in $IDS; do
             (
@@ -39,6 +43,7 @@ jobs:
           wait
           shopt -s nullglob
           ARCHIVES=(prior_archives/*/historical_capture_archive.json)
+          echo "Recovered ${#ARCHIVES[@]} real archive files."
           if [ "${#ARCHIVES[@]}" -eq 0 ]; then
             echo "NO_ARCHIVES_RECOVERED: replay below is empty, not evidence of zero market opportunities."
             echo '{"source_type":"archived_public_orderbook_observations","research_only":true,"trade_allowed":false,"captures":[]}' > backtest_archive.json
@@ -50,6 +55,14 @@ jobs:
           python historical_snapshot_replay.py --archive backtest_archive.json --output backtest_results.json
           python capture_cadence_report.py --archive backtest_archive.json --output backtest_cadence.json
           python sampling_comparison.py --replay backtest_results.json --output backtest_sampling_comparison.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("backtest_results.json").read_text())
+          status="INSUFFICIENT_ARCHIVED_DATA" if r["capture_count_accepted"]==0 else "PRELIMINARY_REPLAY_COMPLETED"
+          Path("backtest_evidence_status.json").write_text(json.dumps({"status":status,"research_only":True,"historical_execution_verified":False,"snapshots":r["capture_count_accepted"]},indent=2))
+          print(status)
+          PY
       - name: Summarize evidence and limitations
         if: always()
         run: |
@@ -71,6 +84,9 @@ jobs:
                   else:
                       out.write(f"- Captures in latest 24 hours: {d['capture_count_in_window']}/{d['expected_captures_in_full_window']} target\n")
                       out.write(f"- Longest observed gap (min): {d['largest_observed_gap_minutes']}\n")
+              if Path("backtest_evidence_status.json").exists():
+                  status=json.loads(Path("backtest_evidence_status.json").read_text())["status"]
+                  out.write(f"- **Evidence status: {status}**\n")
               out.write("- Research only. No historical fills, market-rule equivalence, actual trading eligibility, fees or FX verified.\n")
           PY
       - name: Save historical replay evidence
@@ -84,5 +100,6 @@ jobs:
             backtest_cadence.json
             backtest_sampling_comparison.json
             archive_retrieval_error.txt
+            backtest_evidence_status.json
           retention-days: 14
           if-no-files-found: warn
