@@ -56,20 +56,29 @@ def make_mapping(matches):
         for c in cs:
             ticker_markets.setdefault(c["kalshi_ticker"],set()).add((market_id,slug))
     ambiguous_tickers={ticker for ticker,markets in ticker_markets.items() if len(markets)>1}
-    mapping={}; evidence=[]
+    mapping={}; evidence=[]; rejection_counts={}; rejected=[]
+    def reject(reason, market_id, slug, cs):
+        rejection_counts[reason]=rejection_counts.get(reason,0)+1
+        rejected.append({'reason':reason,'polymarket_market_id':market_id,
+                         'polymarket_slug':slug,
+                         'kalshi_tickers':sorted({str(c.get('kalshi_ticker','')) for c in cs})})
     for (event,market_id,slug),cs in grouped.items():
         code_to_row={c["kalshi_ticker"][-3:]:c for c in cs}
-        if len(code_to_row)!=2 or len(cs)!=2: continue
-        if any(c["kalshi_ticker"] in ambiguous_tickers for c in cs): continue
+        if len(code_to_row)!=2 or len(cs)!=2:
+            reject('not_exactly_two_unique_outcomes',market_id,slug,cs); continue
+        if any(c["kalshi_ticker"] in ambiguous_tickers for c in cs):
+            reject('ambiguous_kalshi_ticker',market_id,slug,cs); continue
         codes=set(code_to_row)
         league=event.split("GAME-",1)[0].removeprefix("KX")
         teams={"NBA":NBA_TEAMS,"NHL":NHL_TEAMS}.get(league)
-        if teams is None or any(code not in teams for code in codes): continue
+        if teams is None or any(code not in teams for code in codes):
+            reject('unsupported_league_or_team',market_id,slug,cs); continue
         # Official market outcome labels and token IDs must be retained from
         # snapshot; a title-only match cannot identify the correct token.
         labels=outcomes(cs[0].get("polymarket_outcomes"))
         tokens=outcomes(cs[0].get("polymarket_clob_token_ids"))
-        if len(labels)!=2 or len(tokens)!=2 or len(set(map(str,tokens)))!=2: continue
+        if len(labels)!=2 or len(tokens)!=2 or len(set(map(str,tokens)))!=2:
+            reject('invalid_outcome_labels_or_tokens',market_id,slug,cs); continue
         assignments={}
         for code,row in code_to_row.items():
             title=normalize(row.get("kalshi_title",""))
@@ -83,7 +92,8 @@ def make_mapping(matches):
                      (normalize(nickname),normalize(city+" "+nickname))]
             if len(options)!=1: break
             assignments[code]=options[0]
-        if len(assignments)!=2 or len(set(assignments.values()))!=2: continue
+        if len(assignments)!=2 or len(set(assignments.values()))!=2:
+            reject('team_label_mismatch',market_id,slug,cs); continue
         for code,row in code_to_row.items():
             opposing=1-assignments[code]
             token=str(tokens[opposing])
@@ -94,7 +104,8 @@ def make_mapping(matches):
                 "polymarket_token_id":token,"rules_verified":False})
     return {"research_only":True,"mapping_method":"exact_event_id_and_two_unambiguous_outcome_labels",
         "market_rules_verified":False,"opposing_token_map":mapping,"evidence":evidence,
-        "mapped_pairs":len(mapping),"ambiguous_tickers_rejected":len(ambiguous_tickers),"warning":"Label-based mappings are candidates only; outcome definitions and settlement rules unverified"}
+        "mapped_pairs":len(mapping),"ambiguous_tickers_rejected":len(ambiguous_tickers),
+        "mapping_rejection_counts":rejection_counts,"mapping_rejections":rejected,"warning":"Label-based mappings are candidates only; outcome definitions and settlement rules unverified"}
 
 if __name__=="__main__":
     import argparse
