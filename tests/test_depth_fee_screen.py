@@ -98,6 +98,11 @@ class DepthFeeTests(unittest.TestCase):
                    Decimal(assigned["polymarket_conservative_funding_reserve_usd"]),Decimal("5"))
   with self.assertRaises(ValueError):
    screen(self.data,extra_cost_venue="invalid",**kwargs)
+  unknown_scenario=screen(self.data,**kwargs)["near_misses"][0]["fixed_ten_contract_pairs"]
+  assigned_scenario=screen(self.data,extra_cost_venue="kalshi",fx_cost_venue="external",
+                            **kwargs)["near_misses"][0]["fixed_ten_contract_pairs"]
+  self.assertEqual(unknown_scenario["total_cost_usd"],assigned_scenario["total_cost_usd"])
+  self.assertEqual(unknown_scenario["hypothetical_net_usd"],assigned_scenario["hypothetical_net_usd"])
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
