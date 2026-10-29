@@ -31,7 +31,11 @@ def capital_check(pair_result, *, balance_a, balance_b, portfolio_total,
         problems.append("Invalid maximum exposure percentage")
     # Balance fields are actual *available* cash and the reserves are held out
     # from those balances. Calculations fail closed on missing/invalid inputs.
-    if allocation_a > Decimal("2500") or allocation_b > Decimal("2500"):\n        problems.append("Per-exchange $2,500 cap would be breached")\n    if portfolio > Decimal("5000"):\n        problems.append("Portfolio exceeds configured $5,000 research ceiling")\n    if allocation_a > available_a * (1-reserve):
+    if allocation_a > Decimal("2500") or allocation_b > Decimal("2500"):
+        problems.append("Per-exchange $2,500 cap would be breached")
+    if portfolio > Decimal("5000"):
+        problems.append("Portfolio exceeds configured $5,000 research ceiling")
+    if allocation_a > available_a * (1-reserve):
         problems.append("Venue A reserve or available balance would be breached")
     if allocation_b > available_b * (1-reserve):
         problems.append("Venue B reserve or available balance would be breached")
