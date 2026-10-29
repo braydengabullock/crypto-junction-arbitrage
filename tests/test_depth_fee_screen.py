@@ -69,6 +69,21 @@ class DepthFeeTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    screen(data,poly_rate="0",kalshi_multiplier="0",extra_cost="0",
           per_venue_budget="2500.01",opposing_tokens={"UNBALANCED|YES":"123"})
+ def test_unassigned_fx_and_overhead_reserve_each_venue(self):
+  data={"rows":[{"kalshi_ticker":"OVERHEAD","observations":[
+    {"venue":"kalshi","book":{"orderbook_fp":{"no_dollars":[["0.5","6000"]],"yes_dollars":[]}}},
+    {"venue":"polymarket","token_id":"123","book":{"asks":[{"price":"0.4","size":"6000"}]}}]}]}
+  result=screen(data,poly_rate="0",kalshi_multiplier="0",extra_cost="100",
+                fx_cost="100",budget="5000",per_venue_budget="2500",
+                opposing_tokens={"OVERHEAD|YES":"123"})
+  scenario=result["near_misses"][0]["scenario"]
+  alloc=scenario["venue_allocation"]
+  self.assertTrue(alloc["overhead_funding_venue_unverified"])
+  self.assertLessEqual(Decimal(alloc["kalshi_conservative_funding_reserve_usd"]),Decimal("2500"))
+  self.assertLessEqual(Decimal(alloc["polymarket_conservative_funding_reserve_usd"]),Decimal("2500"))
+  self.assertEqual(Decimal(alloc["kalshi_conservative_funding_reserve_usd"]) -
+                   Decimal(alloc["kalshi_with_modeled_fee_usd"]),Decimal("200"))
+  self.assertFalse(result["trade_allowed"])
  def test_missing_rates_blocks(self):
   self.assertEqual(screen(self.data)["status"],"FEE_INPUTS_REQUIRED")
  def test_no_opposite_mapping_does_not_claim_candidates(self):
