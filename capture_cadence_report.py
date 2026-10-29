@@ -38,7 +38,8 @@ def evaluate(archive, *, expected_minutes=15, window_hours=24, as_of=None):
         "gaps_exceeding_1_5x_target":sum(g>expected_minutes*1.5 for g in gaps),
         "market_rows_observed_in_window":rows,
         "complete_24_hour_monitoring_verified":bool(span>=window_hours*60-expected_minutes and
-            missing_within_span==0 and (not gaps or max(gaps)<=expected_minutes*1.5)),
+            missing_within_span==0 and (end-recent[-1]).total_seconds()<=expected_minutes*90 and
+            (not gaps or max(gaps)<=expected_minutes*1.5)),
         "warning":"Scheduled GitHub Actions may run late. Counts cover only recovered snapshots, not unseen market movement. Not an execution or profitability claim."
     }
 
