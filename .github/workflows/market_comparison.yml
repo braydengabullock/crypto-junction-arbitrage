@@ -59,6 +59,10 @@ jobs:
         run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 20 --output candidate_orderbooks.json
       - name: Preserve timestamped observed books for future offline replay
         run: python archive_research_capture.py --books candidate_orderbooks.json --mapping opposing_token_map.json --output historical_capture_archive.json
+      - name: Replay current archived observation as a one-capture smoke test
+        run: |
+          python merge_historical_archives.py --archives historical_capture_archive.json --output merged_historical_archive.json
+          python historical_snapshot_replay.py --archive merged_historical_archive.json --output historical_replay_report.json
       - name: Screen displayed depth with explicit fee input gate
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
       - name: Illustrative NBA fee-and-buffer sensitivity (mapped outcome candidates, not verified rules)
@@ -182,6 +186,7 @@ jobs:
               ("depth_fee_screen.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("depth_fee_illustrative.json", ("status", "candidate_scenarios", "net_profit_verified")),
               ("capital_efficiency.json", ("matched_scenarios_compared", "different_size_count", "net_profit_verified")),
+              ("historical_replay_report.json", ("capture_count_accepted", "distinct_utc_dates_observed", "total_positive_candidate_observations", "historical_execution_verified")),
               ("profitability_trial_report.json", ("candidate_pairs_with_positive_modeled_net", "candidate_pairs_eligible_for_research", "positive_candidates_with_short_window_and_ten_contract_depth", "verified_profitable_opportunities")),
               ("research_pipeline_diagnostic.json", ("rows_sampled", "mapped_pairs_with_modeled_costs", "positive_modeled_profit_candidates", "capital_audit_status", "unverified_cost_input_caveat")),
               ("opportunity_economics.json", ("fixed_ten_pairs_analyzed", "counts", "by_league")),
@@ -381,6 +386,8 @@ jobs:
             readiness_report.json
             candidate_orderbooks.json
             historical_capture_archive.json
+            merged_historical_archive.json
+            historical_replay_report.json
             depth_fee_screen.json
             depth_fee_illustrative.json
             capital_efficiency.json
