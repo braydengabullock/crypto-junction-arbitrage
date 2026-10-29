@@ -1,0 +1,26 @@
+name: Offline research validation (no network data)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile research Python modules and tests
+        run: python -m compileall -q .
+      - name: Run scanner regression tests without live market capture
+        run: python -m unittest discover -s tests -v
+      - name: Explain scope
+        if: always()
+        run: |
+          echo '## Crypto Junction — offline validation' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Checks Python syntax and local unit tests only.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Does not verify live orderbooks, matching settlement rules, fees, or executable trades.' >> "$GITHUB_STEP_SUMMARY"
