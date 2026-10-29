@@ -30,10 +30,12 @@ class PipelineDiagnosticTests(unittest.TestCase):
         books={"rows":[{"observations":[{"venue":"kalshi"}],"errors":[]}]}
         r=diagnose(books,{"status":"ILLUSTRATIVE_ONLY_UNVERIFIED_RULES_AND_FEES","near_misses":[],"rows":[]},{},{})
         self.assertEqual(r["primary_research_bottleneck"],"MISSING_BOOK_DATA")
+        self.assertIn("fetch errors",r["next_research_action"])
     def test_missing_outcome_mapping_not_called_unprofitable(self):
         books={"rows":[{"observations":[{"venue":"kalshi"},{"venue":"polymarket"}],"errors":[]}]}
         r=diagnose(books,{"status":"OPPOSING_OUTCOME_MAPPING_REQUIRED","near_misses":[],"rows":[]},{},{})
         self.assertEqual(r["primary_research_bottleneck"],"MISSING_OUTCOME_MAPPING")
+        self.assertIn("outcome labels",r["next_research_action"])
     def test_all_positive_scenarios_do_not_hide_partial_book_coverage(self):
         books={"rows":[{"observations":[{"venue":"kalshi"},{"venue":"polymarket"}],"errors":[]},
                        {"observations":[{"venue":"kalshi"}],"errors":[]}]}
