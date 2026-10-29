@@ -41,6 +41,9 @@ class CapitalAuditTests(unittest.TestCase):
         sample=report()
         sample["rows"][0]["scenario"]["venue_allocation"]["assumed_fx_cost_usd"]="0.01"
         self.assertFalse(audit(sample)["capital_audit_passed"])
+    def test_funding_reserve_cannot_be_less_than_purchase(self):
+        self.assertFalse(audit(report(k="9.99"))["capital_audit_passed"])
+        self.assertFalse(audit(report(p="9.99"))["capital_audit_passed"])
     def test_nonfinite_rejected(self):
         self.assertFalse(audit(report(k="NaN"))["capital_audit_passed"])
 
