@@ -6,6 +6,7 @@ from pathlib import Path
 
 def compare(report):
     comparisons=[]
+    excluded=0
     for row in report.get("rows",[]):
         high=row.get("scenario") or {}
         efficient=row.get("max_roi_scenario") or {}
@@ -17,12 +18,18 @@ def compare(report):
             na=int(efficient["contracts_each"])
             nb=int(high["contracts_each"])
             if not all(x.is_finite() for x in (a,b,pa,pb)) or min(a,b)<=0 or min(pa,pb)<=0 or min(na,nb)<=0:
+                excluded+=1
                 continue
             if b<a or pb<pa:
+                excluded+=1
                 continue
             more_capital=b-a
             more_profit=pb-pa
             incremental_roi=(more_profit/more_capital*100) if more_capital>0 else None
+            incremental_tier=("SAME_SIZE" if incremental_roi is None else
+                              "EXCEPTIONAL_2_PLUS" if incremental_roi>=Decimal("2") else
+                              "HIGHER_PRIORITY_0_5_PLUS" if incremental_roi>=Decimal("0.5") else
+                              "SMALL_POSITIVE" if incremental_roi>0 else "NO_INCREMENTAL_GAIN")
             comparisons.append({
                 "kalshi_ticker":row.get("kalshi_ticker"),
                 "kalshi_side":row.get("kalshi_side"),
@@ -33,13 +40,16 @@ def compare(report):
                 "additional_modeled_profit_usd":str(more_profit),
                 "incremental_modeled_roi_pct":str(incremental_roi.quantize(Decimal("0.001"))) if incremental_roi is not None else None,
                 "same_sizing":na==nb,
+                "incremental_roi_tier":incremental_tier,
                 "cost_inputs_verified":False,"candidate_only":True
             })
         except (ValueError,TypeError,KeyError,InvalidOperation,ArithmeticError):
+            excluded+=1
             continue
     return {"research_only":True,"trade_allowed":False,"net_profit_verified":False,
             "matched_scenarios_compared":len(comparisons),
             "different_size_count":sum(not x["same_sizing"] for x in comparisons),
+            "excluded_incomplete_or_invalid_scenarios":excluded,
             "comparisons":comparisons,
             "warning":"Incremental ROI is purely illustrative. Fee rates, fills, outcome equivalence, and market access remain unverified."}
 
