@@ -339,6 +339,7 @@ jobs:
               cap_audit = json.loads(Path("capital_audit.json").read_text(encoding="utf-8"))
               lines.extend(["", "### Capital-limit accounting audit",
                             "- Scenarios checked: " + str(cap_audit.get("scenarios_checked")),
+                            "- Audit evidence status: " + str(cap_audit.get("evidence_status", "UNKNOWN")),
                             "- Capital and accounting checks passed: " + str(cap_audit.get("capital_audit_passed")),
                             "- Issues: " + str(cap_audit.get("issues", []))])
           except (OSError, ValueError, TypeError):
