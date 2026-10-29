@@ -72,7 +72,11 @@ def evaluate(row, *, budget="5000", per_venue_budget="2500"):
                 int((venue_cap/per_b).to_integral_value(rounding=ROUND_FLOOR)) if per_b>0 else 0) if per_pair>0 else 0
         if qty<=0:
             reasons.append("No paired fill depth within budget")
-        spent=per_pair*qty
+        spent_a=per_a*qty
+        spent_b=per_b*qty
+        spent=spent_a+spent_b
+        if spent_a>venue_cap or spent_b>venue_cap or spent>combined_cap:
+            raise ValueError("Research funding cap exceeded")
         gain=(payout-per_pair)*qty
         roi=(gain/spent*100) if spent else Decimal(0)
         projected_roi=((Decimal(1)-per_pair)/per_pair*100) if per_pair else Decimal(0)
@@ -86,6 +90,8 @@ def evaluate(row, *, budget="5000", per_venue_budget="2500"):
     return {"id":row["id"],"status":"CONDITIONAL_PAPER_RESULT",
             "contracts_per_leg":qty,
             "modeled_cost_usd":str(spent.quantize(MONEY)),
+            "modeled_venue_a_cost_usd":str(spent_a.quantize(MONEY)),
+            "modeled_venue_b_cost_usd":str(spent_b.quantize(MONEY)),
             "modeled_profit_usd":str(gain.quantize(MONEY)),
             "modeled_net_roi_pct":str(roi.quantize(Decimal("0.001"))),
             "entry_projected_roi_pct":str(projected_roi.quantize(Decimal("0.001"))),
