@@ -9,6 +9,7 @@ import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from collections import Counter
 from decimal import Decimal
 from depth_fee_screen import screen
 
@@ -23,7 +24,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
         raise ValueError("Archive needs captures list")
     if archive.get("source_type")!="archived_public_orderbook_observations" or archive.get("trade_allowed") is True:
         raise ValueError("Explicit archival provenance required")
-    results=[];rejected=[];seen=set();unique_positive_pairs=set()
+    results=[];rejected=[];seen=set();unique_positive_pairs=set();pricing_totals=Counter()
     for index,capture in enumerate(archive["captures"]):
         try:
             if not isinstance(capture,dict): raise ValueError("Invalid capture")
@@ -39,6 +40,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
                 kalshi_multiplier=kalshi_multiplier,extra_cost=extra_cost,
                 fx_cost=fx_cost,budget=budget,per_venue_budget=per_venue_budget,
                 opposing_tokens=mapping)
+            pricing_totals.update(screened.get("pricing_diagnostics",{}))
             scenarios=[]
             for item in screened["rows"]:
                 s=item["scenario"]
@@ -60,6 +62,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
                     "potentially_non_atomic":True})
             results.append({"captured_at":key,"modeled_positive_candidates":len(scenarios),
                             "pairs_with_modeled_prices":screened.get("mapped_pairs_priced",0),
+                            "pricing_diagnostics":screened.get("pricing_diagnostics",{}),
                             "candidates":scenarios[:50]})
         except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
             rejected.append({"capture_index":index,"reason":str(exc)[:160]})
@@ -77,6 +80,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
         "distinct_positive_market_pairs_observed":len(unique_positive_pairs),
         "independent_profitable_trades_established":0,
         "total_priced_pair_observations":sum(x["pairs_with_modeled_prices"] for x in results),
+        "pricing_diagnostics":dict(sorted(pricing_totals.items())),
         "eligibility_rule":"modeled_net_usd_strictly_greater_than_zero_no_minimum_roi",
         "max_combined_budget_usd":"5000","max_per_venue_budget_usd":"2500",
         "fx_cost_assumed_zero_if_not_explicit":fx_cost is None,
