@@ -28,12 +28,22 @@ def triage(report):
             if k!=p:
                 differences.append({"topic":topic,"kalshi_mentions":k,"polymarket_mentions":p,
                                     "interpretation":"TEXT_MENTION_DIFFERENCE_ONLY"})
-        rows.append({"kalshi_ticker":row.get("kalshi_ticker"),
+        # A mismatch is a research warning, never an execution approval.
+        postponement_conflict=bool(
+            re.search(r"48\\s*hours?",kalshi,re.I)
+            and re.search(r"postpon|reschedul",kalshi,re.I)
+            and re.search(r"postpon|reschedul",poly,re.I)
+            and not re.search(r"48\\s*hours?",poly,re.I)
+        )
+        risk_flags=["POSSIBLE_POSTPONEMENT_WINDOW_MISMATCH"] if postponement_conflict else []
+        rows.append({"opportunity_class":"POTENTIAL_ARBITRAGE",
+                     "settlement_risk_flags":risk_flags,
+                     "kalshi_ticker":row.get("kalshi_ticker"),
                      "kalshi_side":row.get("kalshi_side"),
                      "polymarket_token_id":row.get("polymarket_token_id"),
                      "rule_texts_collected":bool(row.get("source_fields_collected")),
                      "manual_review_flags":differences,
-                     "manual_review_priority":"CHECK_DIFFERENCES" if differences else "READ_BOTH_RULES",
+                     "manual_review_priority":"CHECK_DIFFERENCES" if differences or risk_flags else "READ_BOTH_RULES",
                      "rule_equivalence_verified":False})
     return {"research_only":True,"trade_allowed":False,"verified_pairs":0,
             "records_examined":len(rows),
