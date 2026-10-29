@@ -15,12 +15,17 @@ def compare(report):
             b=Decimal(str(high["total_cost_usd"]))
             pa=Decimal(str(efficient["hypothetical_net_usd"]))
             pb=Decimal(str(high["hypothetical_net_usd"]))
-            na=int(efficient["contracts_each"])
-            nb=int(high["contracts_each"])
+            qa=Decimal(str(efficient["contracts_each"]))
+            qb=Decimal(str(high["contracts_each"]))
+            if not qa.is_finite() or not qb.is_finite() or qa!=qa.to_integral_value() or qb!=qb.to_integral_value():
+                excluded+=1
+                continue
+            na=int(qa)
+            nb=int(qb)
             if not all(x.is_finite() for x in (a,b,pa,pb)) or min(a,b)<=0 or min(pa,pb)<=0 or min(na,nb)<=0:
                 excluded+=1
                 continue
-            if b<a or pb<pa:
+            if nb<na or b<a or pb<pa or (nb>na and b==a):
                 excluded+=1
                 continue
             more_capital=b-a
