@@ -18,6 +18,20 @@ class SportsIdentifierTests(unittest.TestCase):
   matches,_=compare({"markets":[k]},{"markets":[false,real]})
   self.assertEqual(matches[0]["polymarket_id"],"GAME")
   self.assertEqual(matches[0]["match_method"],"sports_identifier_date_teams_research")
+ def test_title_overlap_cannot_override_game_identity(self):
+  k={"ticker":"KXNHLGAME-26OCT29LAKANA-LAK","title":"Los Angeles wins"}
+  wrong={"id":"ELECTION","slug":"los-angeles-mayor-election",
+         "question":"Will Los Angeles win the mayoral election?",
+         "enableOrderBook":True,"acceptingOrders":True}
+  matches,count=compare({"markets":[k]},{"markets":[wrong]},threshold=0.0)
+  self.assertEqual(count,0)
+  self.assertEqual(matches,[])
+ def test_finals_market_not_same_game(self):
+  k={"ticker":"KXNBAGAME-26OCT28SASUTA-SAS","title":"San Antonio wins"}
+  wrong={"id":"FINAL","slug":"will-san-antonio-spurs-win-2027-finals",
+         "question":"Will San Antonio win the NBA Finals?","enableOrderBook":True}
+  matches,count=compare({"markets":[k]},{"markets":[wrong]},threshold=0.0)
+  self.assertEqual(count,0)
  def test_date_or_team_mismatch_does_not_match(self):
   k={"ticker":"KXNBAGAME-26OCT28OKCDAL-OKC"}
   for slug in ("nba-okc-dal-2026-10-29","nba-okc-lal-2026-10-28","nfl-okc-dal-2026-10-28"):
