@@ -17,7 +17,7 @@ def dec(value):
         raise ValueError("Invalid nonnegative numeric input")
     return v
 
-def evaluate(row, *, budget="100", roi_floor="2"):
+def evaluate(row, *, budget="5000", per_venue_budget="2500"):
     required=("id","source_a","source_b","side_a","side_b",
               "ask_a","ask_b","depth_a","depth_b","fee_a_per_contract",
               "fee_b_per_contract","verified_rule_equivalence",
@@ -59,17 +59,25 @@ def evaluate(row, *, budget="100", roi_floor="2"):
         payout=dec(row["actual_payout_per_pair"])
         if a>1 or b>1 or payout>1 or depth_a!=depth_a.to_integral_value() or depth_b!=depth_b.to_integral_value():
             reasons.append("Invalid contract ask or depth")
+        combined_cap=dec(budget)
+        venue_cap=dec(per_venue_budget)
+        if combined_cap>5000 or venue_cap>2500 or combined_cap<=0 or venue_cap<=0:
+            raise ValueError("Research capital limit violation")
         per_pair=a+b+fa+fb
+        per_a=a+fa
+        per_b=b+fb
         qty=min(int(depth_a),int(depth_b),
-                int((dec(budget)/per_pair).to_integral_value(rounding=ROUND_FLOOR))) if per_pair>0 else 0
+                int((combined_cap/per_pair).to_integral_value(rounding=ROUND_FLOOR)),
+                int((venue_cap/per_a).to_integral_value(rounding=ROUND_FLOOR)) if per_a>0 else 0,
+                int((venue_cap/per_b).to_integral_value(rounding=ROUND_FLOOR)) if per_b>0 else 0) if per_pair>0 else 0
         if qty<=0:
             reasons.append("No paired fill depth within budget")
         spent=per_pair*qty
         gain=(payout-per_pair)*qty
         roi=(gain/spent*100) if spent else Decimal(0)
         projected_roi=((Decimal(1)-per_pair)/per_pair*100) if per_pair else Decimal(0)
-        if projected_roi < dec(roi_floor):
-            reasons.append("Below required modeled net ROI")
+        if projected_roi<=0:
+            reasons.append("Nonpositive modeled net return")
     except (TypeError,ValueError,InvalidOperation,OverflowError) as exc:
         return {"id":row.get("id"),"status":"INSUFFICIENT_EVIDENCE","reasons":[str(exc)]}
     if reasons:
