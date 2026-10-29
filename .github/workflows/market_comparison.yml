@@ -306,7 +306,7 @@ jobs:
                             "- Small positive (above 0%, below 0.5%): " + str(tiers["SMALL_POSITIVE"]),
                             "- Higher priority (0.5% to below 2%): " + str(tiers["HIGHER_PRIORITY_0_5_PLUS"]),
                             "- Exceptional (2% or greater): " + str(tiers["EXCEPTIONAL_2_PLUS"]),
-                            "- $5,000 combined and $2,500 per-venue research ceilings; size constrained by both order books; all fees, FX costs and trading eligibility require independent verification."])
+                            "- $5,000 combined and $2,500 per-venue research ceilings. Unknown FX/extra funding location is conservatively reserved on each venue, but counted only once in modeled combined costs. Fee schedules, funding assignment, FX and trading eligibility remain unverified."])
           except (OSError, ValueError, TypeError):
               lines.append("Positive-net ROI tier counts unavailable.")
           try:
