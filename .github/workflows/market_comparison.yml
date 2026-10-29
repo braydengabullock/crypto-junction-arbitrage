@@ -70,7 +70,9 @@ jobs:
         run: |
           mkdir -p historical_prior
           ARCHIVES=(historical_capture_archive.json)
-          IDS="$(gh run list --workflow market_comparison.yml --status completed --limit 100 --json databaseId --jq '.[].databaseId')"
+          # Include two hours of scheduling slack, but avoid fetching stale runs.
+          SINCE="$(date -u -d '26 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
+          IDS="$(gh run list --workflow market_comparison.yml --status completed --created ">=$SINCE" --limit 100 --json databaseId --jq '.[].databaseId')"
           # Retrieve runs concurrently: 100 serial 5-second timeouts could exceed the job.
           # Each archive remains an independently timestamped observation.
           ACTIVE=0
