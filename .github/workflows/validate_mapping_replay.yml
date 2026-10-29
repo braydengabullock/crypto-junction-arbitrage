@@ -2,7 +2,12 @@ name: Validate mapping and replay saved five-cycle evidence
 on:
   push:
     branches: [main]
-    paths:\n      - '.github/workflows/validate_mapping_replay.yml'\n      - 'opposing_token_map.py'\n      - 'depth_fee_screen.py'\n      - 'historical_snapshot_replay.py'\n      - 'tests/test_mapping_collision_regression.py'
+    paths:
+      - '.github/workflows/validate_mapping_replay.yml'
+      - 'opposing_token_map.py'
+      - 'depth_fee_screen.py'
+      - 'historical_snapshot_replay.py'
+      - 'tests/test_mapping_collision_regression.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,7 +45,23 @@ jobs:
             "positive_sightings":r["total_positive_candidate_observations"],
             "pricing_diagnostics":r["pricing_diagnostics"]},indent=2))
           PY
-      - name: Summarize diagnostic outcome\n        if: always()\n        run: |\n          echo '### Five-cycle mapping and pricing validation' >> "$GITHUB_STEP_SUMMARY"\n          if [ -f validated_replay/local_backtest_results.json ]; then\n            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"\n          import json\n          r=json.load(open('validated_replay/local_backtest_results.json'))\n          print('Snapshots accepted:',r['capture_count_accepted'])\n          print('Priced scenarios:',r['total_priced_pair_observations'])\n          print('Positive modeled sightings:',r['total_positive_candidate_observations'])\n          print('Pricing diagnostics:',r['pricing_diagnostics'])\n          PY\n          else\n            echo 'Replay unavailable; inspect failed job steps.' >> "$GITHUB_STEP_SUMMARY"\n          fi\n      - name: Archive replay results
+      - name: Summarize diagnostic outcome
+        if: always()
+        run: |
+          echo '### Five-cycle mapping and pricing validation' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f validated_replay/local_backtest_results.json ]; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          r=json.load(open('validated_replay/local_backtest_results.json'))
+          print('Snapshots accepted:',r['capture_count_accepted'])
+          print('Priced scenarios:',r['total_priced_pair_observations'])
+          print('Positive modeled sightings:',r['total_positive_candidate_observations'])
+          print('Pricing diagnostics:',r['pricing_diagnostics'])
+          PY
+          else
+            echo 'Replay unavailable; inspect failed job steps.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Archive replay results
         if: always()
         uses: actions/upload-artifact@v4
         with:
