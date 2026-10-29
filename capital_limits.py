@@ -8,8 +8,8 @@ def dec(value):
     return x
 
 def capital_check(pair_result, *, balance_a, balance_b, portfolio_total,
-                  total_current_committed, per_venue_reserve_pct=30,
-                  max_exposure_pct=25):
+                  total_current_committed, per_venue_reserve_pct=0,
+                  max_exposure_pct=100):
     """Evaluate supplied balances; never claim independently verified balances."""
     try:
         available_a=dec(balance_a)
@@ -31,6 +31,10 @@ def capital_check(pair_result, *, balance_a, balance_b, portfolio_total,
         problems.append("Invalid maximum exposure percentage")
     # Balance fields are actual *available* cash and the reserves are held out
     # from those balances. Calculations fail closed on missing/invalid inputs.
+    if allocation_a > Decimal("2500") or allocation_b > Decimal("2500"):
+        problems.append("Per-exchange $2,500 cap would be breached")
+    if portfolio > Decimal("5000"):
+        problems.append("Portfolio exceeds configured $5,000 research ceiling")
     if allocation_a > available_a * (1-reserve):
         problems.append("Venue A reserve or available balance would be breached")
     if allocation_b > available_b * (1-reserve):
