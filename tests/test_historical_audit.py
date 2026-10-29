@@ -49,8 +49,7 @@ class HistoricalAuditTests(unittest.TestCase):
         self.assertEqual(r["status"],"CONDITIONAL_PAPER_RESULT")
         self.assertLessEqual(r["contracts_per_leg"]*0.41,2500)
         self.assertLessEqual(r["contracts_per_leg"]*0.54,2500)
-        with self.assertRaises(AssertionError):
-            self.assertEqual(evaluate(p,budget="5001")["status"],"CONDITIONAL_PAPER_RESULT")
+        self.assertEqual(evaluate(p,budget="5001")["status"],"INSUFFICIENT_EVIDENCE")
     def test_actual_loss_is_counted_when_entry_looked_profitable(self):
         p=sample()
         p["actual_payout_per_pair"]="0.50"
