@@ -337,6 +337,9 @@ jobs:
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\n".join(lines) + "\n")
           PY
+      - name: Check research Python syntax
+        if: always()
+        run: python -m compileall -q depth_fee_screen.py near_miss_watchlist.py fee_estimates.py orderbook_research.py tests
       - name: Validate research logic
         if: always()
         run: python -m unittest discover -s tests -v
