@@ -82,16 +82,20 @@ jobs:
           done
           python merge_historical_archives.py --archives "${ARCHIVES[@]}" --output multi_run_historical_archive.json
           python historical_snapshot_replay.py --archive multi_run_historical_archive.json --output multi_run_historical_replay.json
+          python capture_cadence_report.py --archive multi_run_historical_archive.json --output capture_cadence_report.json
           python - <<'PY'
           import json,os
           from pathlib import Path
           merged=json.loads(Path("multi_run_historical_archive.json").read_text())
           replay=json.loads(Path("multi_run_historical_replay.json").read_text())
+          cadence=json.loads(Path("capture_cadence_report.json").read_text())
           with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
               f.write("\\n### Available archived-observation replay (not verified trades)\\n")
               f.write(f"- Captures: {merged['capture_count']} across {merged['distinct_utc_dates_observed']} UTC dates\\n")
               f.write(f"- 30-day date coverage: {merged['observed_dates_in_last_30_days_of_dataset']}/30 days (relative to latest capture)\\n")
               f.write(f"- Positive modeled candidate observations: {replay['total_positive_candidate_observations']}\\n")
+              f.write(f"- Recent 24-hour captures: {cadence['capture_count_in_window']}; largest observed gap (min): {cadence['largest_observed_gap_minutes']}\\n")
+              f.write(f"- Estimated missed 15-minute intervals within observed span: {cadence['estimated_missing_captures_within_observed_span']}\\n")
               f.write("- No minimum ROI; realized fills and rule-equivalence remain unverified.\\n")
           PY
       - name: Screen displayed depth with explicit fee input gate
@@ -421,6 +425,7 @@ jobs:
             historical_replay_report.json
             multi_run_historical_archive.json
             multi_run_historical_replay.json
+            capture_cadence_report.json
             depth_fee_screen.json
             depth_fee_illustrative.json
             capital_efficiency.json
