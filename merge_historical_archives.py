@@ -28,11 +28,22 @@ def merge(archives):
                 rejected.append({"archive_index":i,"capture_index":j,"reason":"INVALID_CAPTURE"})
     ordered=[captures[t] for t in sorted(captures)]
     days=len({t[:10] for t in captures})
+    dates=sorted({t[:10] for t in captures})
+    last_30_dates=set()
+    if dates:
+        from datetime import date, timedelta
+        end=date.fromisoformat(dates[-1])
+        last_30_dates={(end-timedelta(days=i)).isoformat() for i in range(30)}
+    dates_in_30=sorted(set(dates)&last_30_dates)
     return {"source_type":SOURCE,"research_only":True,"trade_allowed":False,
             "market_rules_verified":False,"net_profit_verified":False,
             "provenance_note":"Combined actual archived public orderbook observations; no backfill.",
             "archives_inspected":len(archives),"captures":[*ordered],
             "capture_count":len(ordered),"distinct_utc_dates_observed":days,
+            "observed_dates_in_last_30_days_of_dataset":len(dates_in_30),
+            "missing_dates_in_last_30_days_of_dataset":30-len(dates_in_30),
+            "observed_30_day_date_coverage_pct":str(round(len(dates_in_30)/30*100,2)),
+            "historical_30_day_coverage_complete":len(dates_in_30)==30,
             "first_capture_at":ordered[0]["captured_at"] if ordered else None,
             "last_capture_at":ordered[-1]["captured_at"] if ordered else None,
             "rejections":rejected,
