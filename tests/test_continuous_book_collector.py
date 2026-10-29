@@ -1,4 +1,5 @@
 import tempfile
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 from continuous_book_collector import record_once, run
@@ -27,6 +28,18 @@ class ContinuousCaptureTests(unittest.TestCase):
                 run(matches,mapping,d,interval_seconds=1)
             with self.assertRaises(ValueError):
                 run(matches,mapping,d,iterations=1441)
+    def test_cycle_reports_overrun_and_does_not_sleep_negative_time(self):
+        matches,mapping=inputs()
+        fake_result={"sampled_pairs":1,"research_only":True,"trade_allowed":False}
+        times=iter([0,75])
+        sleeps=[]
+        with tempfile.TemporaryDirectory() as d:
+            with patch("continuous_book_collector.record_once",return_value=fake_result.copy()):
+                results=run(matches,mapping,d,interval_seconds=60,iterations=1,clock=lambda:next(times),sleeper=sleeps.append)
+        self.assertEqual(results[0]["cycle_duration_seconds"],75)
+        self.assertFalse(results[0]["completed_within_target_interval"])
+        self.assertEqual(results[0]["cycle_overrun_seconds"],15)
+        self.assertEqual(sleeps,[])
     def test_invalid_market_mapping_rejected(self):
         matches,mapping=inputs()
         mapping["market_rules_verified"]=True
