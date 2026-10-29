@@ -21,11 +21,22 @@ def evaluate(archive, *, expected_minutes=15, window_hours=24, as_of=None):
     span=(recent[-1]-recent[0]).total_seconds()/60 if len(recent)>1 else 0
     expected_on_observed_span=int(span//expected_minutes)+1 if recent else 0
     missing_within_span=max(0,expected_on_observed_span-len(recent))
-    rows=sum(len(c.get("rows",[])) for c in captures if timestamp(c["captured_at"]) in set(recent))
+    recent_set=set(recent)
+    rows=sum(len(c.get("rows",[])) for c in captures if timestamp(c["captured_at"]) in recent_set)
+    initial_gap=(recent[0]-start).total_seconds()/60 if recent else window_hours*60
+    trailing_gap=(end-recent[-1]).total_seconds()/60 if recent else window_hours*60
+    expected_full_window=int(window_hours*60/expected_minutes)
+    # Scheduled jobs can start late: this is an approximate count, not proof
+    # that each specific wall-clock slot was missed.
+    estimated_missing_full_window=max(0,expected_full_window-len(recent))
     return {
         "research_only":True,"trade_allowed":False,
         "window_hours":window_hours,"expected_interval_minutes":expected_minutes,
         "capture_count_in_window":len(recent),
+        "expected_captures_in_full_window":expected_full_window,
+        "estimated_missing_captures_in_full_window":estimated_missing_full_window,
+        "initial_unobserved_gap_minutes":round(initial_gap,2),
+        "trailing_unobserved_gap_minutes":round(trailing_gap,2),
         "review_as_of":end.isoformat(),
         "minutes_since_last_observation":round((end-recent[-1]).total_seconds()/60,2) if recent else None,
         "latest_capture_is_stale":(end-recent[-1]).total_seconds()>expected_minutes*90 if recent else True,
@@ -37,7 +48,9 @@ def evaluate(archive, *, expected_minutes=15, window_hours=24, as_of=None):
         "largest_observed_gap_minutes":max(gaps) if gaps else None,
         "gaps_exceeding_1_5x_target":sum(g>expected_minutes*1.5 for g in gaps),
         "market_rows_observed_in_window":rows,
-        "complete_24_hour_monitoring_verified":bool(span>=window_hours*60-expected_minutes and
+        "complete_24_hour_monitoring_verified":bool(len(recent)>=expected_full_window and
+            initial_gap<=expected_minutes*1.5 and trailing_gap<=expected_minutes*1.5 and
+            span>=window_hours*60-expected_minutes and
             missing_within_span==0 and (end-recent[-1]).total_seconds()<=expected_minutes*90 and
             (not gaps or max(gaps)<=expected_minutes*1.5)),
         "warning":"Scheduled GitHub Actions may run late. Counts cover only recovered snapshots, not unseen market movement. Not an execution or profitability claim."
