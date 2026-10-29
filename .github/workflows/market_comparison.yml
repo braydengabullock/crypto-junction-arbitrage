@@ -90,6 +90,7 @@ jobs:
           with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
               f.write("\\n### Available archived-observation replay (not verified trades)\\n")
               f.write(f"- Captures: {merged['capture_count']} across {merged['distinct_utc_dates_observed']} UTC dates\\n")
+              f.write(f"- 30-day date coverage: {merged['observed_dates_in_last_30_days_of_dataset']}/30 days (relative to latest capture)\\n")
               f.write(f"- Positive modeled candidate observations: {replay['total_positive_candidate_observations']}\\n")
               f.write("- No minimum ROI; realized fills and rule-equivalence remain unverified.\\n")
           PY
