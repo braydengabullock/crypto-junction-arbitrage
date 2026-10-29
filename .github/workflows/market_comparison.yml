@@ -57,6 +57,8 @@ jobs:
           python sports_discovery_funnel.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --matches research_matches.json --mapping opposing_token_map.json --output sports_discovery_funnel.json
       - name: Sample mapped game-winner orderbooks (bounded research)
         run: python candidate_orderbooks.py --matches research_matches.json --opposing-token-map opposing_token_map.json --max-pairs 20 --output candidate_orderbooks.json
+      - name: Preserve timestamped observed books for future offline replay
+        run: python archive_research_capture.py --books candidate_orderbooks.json --mapping opposing_token_map.json --output historical_capture_archive.json
       - name: Screen displayed depth with explicit fee input gate
         run: python depth_fee_screen.py --books candidate_orderbooks.json --output depth_fee_screen.json
       - name: Illustrative NBA fee-and-buffer sensitivity (mapped outcome candidates, not verified rules)
@@ -378,6 +380,7 @@ jobs:
             sports_discovery_funnel.json
             readiness_report.json
             candidate_orderbooks.json
+            historical_capture_archive.json
             depth_fee_screen.json
             depth_fee_illustrative.json
             capital_efficiency.json
@@ -401,5 +404,5 @@ jobs:
             one_event_pair_combinations.json
             indicative_candidate_screen.json
             clob_access_diagnostic.json
-          retention-days: 14
+          retention-days: 35
           if-no-files-found: warn
