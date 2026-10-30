@@ -11,7 +11,7 @@ from pathlib import Path
 from candidate_orderbooks import collect
 from archive_research_capture import build
 
-def record_once(matches, mapping, output_dir, *, max_pairs=30, fetch_k=None, fetch_p=None, workers=1):
+def record_once(matches, mapping, output_dir, *, max_pairs=30, fetch_k=None, fetch_p=None, workers=1, unavailable_tokens=None):
     if matches.get("source")!="kalshi_polymarket_title_research" or matches.get("research_only") is not True:
         raise ValueError("Research-only market candidate source required")
     if mapping.get("mapping_method")!="exact_event_id_and_two_unambiguous_outcome_labels" or mapping.get("market_rules_verified") is not False:
@@ -20,7 +20,7 @@ def record_once(matches, mapping, output_dir, *, max_pairs=30, fetch_k=None, fet
     kwargs={}
     if fetch_k is not None: kwargs["fetch_k"]=fetch_k
     if fetch_p is not None: kwargs["fetch_p"]=fetch_p
-    books=collect(matches.get("candidates",[]),max_pairs=max_pairs,allowed_tickers=allowed,workers=workers,**kwargs)
+    books=collect(matches.get("candidates",[]),max_pairs=max_pairs,allowed_tickers=allowed,workers=workers,unavailable_tokens=unavailable_tokens,**kwargs)
     archive=build(books,mapping)
     output=Path(output_dir)
     output.mkdir(parents=True,exist_ok=True)
@@ -39,9 +39,10 @@ def run(matches,mapping,output_dir,*,interval_seconds=60,iterations=1,
     if not 30<=interval_seconds<=900: raise ValueError("Interval must be 30-900 seconds")
     if not 1<=iterations<=1440: raise ValueError("Bounded iteration count required")
     results=[]
+    unavailable_tokens=set()
     for i in range(iterations):
         start=clock()
-        result=record_once(matches,mapping,output_dir,max_pairs=max_pairs,workers=workers)
+        result=record_once(matches,mapping,output_dir,max_pairs=max_pairs,workers=workers,unavailable_tokens=unavailable_tokens)
         elapsed=max(0,clock()-start)
         result["cycle_duration_seconds"]=round(elapsed,3)
         result["completed_within_target_interval"]=elapsed<=interval_seconds
