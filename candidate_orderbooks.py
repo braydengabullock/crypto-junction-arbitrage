@@ -25,10 +25,12 @@ def parse_tokens(value):
         return []
 
 def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
-            fetch_p=fetch_polymarket_book, allowed_tickers=None, workers=1):
+            fetch_p=fetch_polymarket_book, allowed_tickers=None, workers=1, unavailable_tokens=None):
     if not isinstance(candidates,list) or not 1<=max_pairs<=30 or not 1<=workers<=4:
         raise ValueError("Invalid candidates or cap")
     rows=[]
+    # Shared only within a collector run. Refreshed automatically on the next run.
+    unavailable_tokens = unavailable_tokens if unavailable_tokens is not None else set()
     selected=[c for c in candidates if allowed_tickers is None or c.get("kalshi_ticker") in allowed_tickers]
     # Interleave eligible leagues instead of consuming the first N (usually NBA).
     buckets={}
@@ -72,6 +74,9 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
         except Exception as exc:
             row["errors"].append("Kalshi fetch failed: "+type(exc).__name__)
         for token in tokens[:2]:
+            if token in unavailable_tokens:
+                row["errors"].append("Polymarket NO_ORDERBOOK_CACHED HTTP 404 (not refetched)")
+                continue
             try:
                 started=now()
                 book=fetch_p(token)
@@ -81,6 +86,8 @@ def collect(candidates, *, max_pairs=5, fetch_k=fetch_kalshi_book,
             except HTTPError as exc:
                 category = {400:"INVALID_TOKEN",404:"NO_ORDERBOOK",429:"RATE_LIMITED"}.get(exc.code,"HTTP_ERROR")
                 row["errors"].append("Polymarket "+category+" HTTP "+str(exc.code))
+                if exc.code == 404:
+                    unavailable_tokens.add(token)
             except Exception as exc:
                 row["errors"].append("Polymarket fetch failed: "+type(exc).__name__)
         return row
