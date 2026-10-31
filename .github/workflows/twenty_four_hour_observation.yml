@@ -342,7 +342,7 @@ jobs:
           set -euo pipefail
           for n in 1 2 3 4 5 6; do
             test -d "observation_all/observation-window-$n"
-            find "observation_all/observation-window-$n" -name '*.json' -path '*/observation_window_*/*' | grep -q .
+            test -n "$(find "observation_all/observation-window-$n" -name '*.json' -path '*/observation_window_*/*' -print -quit)"
           done
       - name: Replay all archived public observations
         run: |
