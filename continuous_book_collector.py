@@ -41,6 +41,9 @@ def run(matches,mapping,output_dir,*,interval_seconds=60,iterations=1,
     results=[]
     unavailable_tokens=set()
     for i in range(iterations):
+        # Retry unavailable books periodically; never suppress a token for a full window.
+        if i and i % 15 == 0:
+            unavailable_tokens.clear()
         start=clock()
         result=record_once(matches,mapping,output_dir,max_pairs=max_pairs,workers=workers,unavailable_tokens=unavailable_tokens)
         elapsed=max(0,clock()-start)
