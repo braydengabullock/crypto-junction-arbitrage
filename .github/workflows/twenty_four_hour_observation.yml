@@ -54,6 +54,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_1 > observation_window_1_health.json
           cat observation_window_1_health.json
+          python venue_coverage_health.py --archive-dir observation_window_1 > observation_window_1_venue_health.json
+          cat observation_window_1_venue_health.json
       - name: Build window 1 profitability replay
         if: always()
         run: |
@@ -66,7 +68,10 @@ jobs:
           path: |
             observation_window_1/*.json
             observation_window_1.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_1_health.json
+            observation_window_1_venue_health.json
             observation_window_1_backtest_summary.json
             observation_window_1_backtest/*.json
           if-no-files-found: warn
@@ -87,11 +92,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore original research mapping
-        uses: actions/download-artifact@v4
-        with:
-          name: observation-mapping
-          path: .
+      - name: Refresh eligible public markets for this window
+        run: |
+          set -euo pipefail
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Collect four-hour window 2 (read only)
         run: |
           set -euo pipefail
@@ -103,6 +112,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_2 > observation_window_2_health.json
           cat observation_window_2_health.json
+          python venue_coverage_health.py --archive-dir observation_window_2 > observation_window_2_venue_health.json
+          cat observation_window_2_venue_health.json
       - name: Build window 2 profitability replay
         if: always()
         run: |
@@ -115,7 +126,10 @@ jobs:
           path: |
             observation_window_2/*.json
             observation_window_2.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_2_health.json
+            observation_window_2_venue_health.json
             observation_window_2_backtest_summary.json
             observation_window_2_backtest/*.json
           if-no-files-found: warn
@@ -136,11 +150,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore original research mapping
-        uses: actions/download-artifact@v4
-        with:
-          name: observation-mapping
-          path: .
+      - name: Refresh eligible public markets for this window
+        run: |
+          set -euo pipefail
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Collect four-hour window 3 (read only)
         run: |
           set -euo pipefail
@@ -152,6 +170,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_3 > observation_window_3_health.json
           cat observation_window_3_health.json
+          python venue_coverage_health.py --archive-dir observation_window_3 > observation_window_3_venue_health.json
+          cat observation_window_3_venue_health.json
       - name: Build window 3 profitability replay
         if: always()
         run: |
@@ -164,7 +184,10 @@ jobs:
           path: |
             observation_window_3/*.json
             observation_window_3.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_3_health.json
+            observation_window_3_venue_health.json
             observation_window_3_backtest_summary.json
             observation_window_3_backtest/*.json
           if-no-files-found: warn
@@ -185,11 +208,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore original research mapping
-        uses: actions/download-artifact@v4
-        with:
-          name: observation-mapping
-          path: .
+      - name: Refresh eligible public markets for this window
+        run: |
+          set -euo pipefail
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Collect four-hour window 4 (read only)
         run: |
           set -euo pipefail
@@ -201,6 +228,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_4 > observation_window_4_health.json
           cat observation_window_4_health.json
+          python venue_coverage_health.py --archive-dir observation_window_4 > observation_window_4_venue_health.json
+          cat observation_window_4_venue_health.json
       - name: Build window 4 profitability replay
         if: always()
         run: |
@@ -213,7 +242,10 @@ jobs:
           path: |
             observation_window_4/*.json
             observation_window_4.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_4_health.json
+            observation_window_4_venue_health.json
             observation_window_4_backtest_summary.json
             observation_window_4_backtest/*.json
           if-no-files-found: warn
@@ -234,11 +266,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore original research mapping
-        uses: actions/download-artifact@v4
-        with:
-          name: observation-mapping
-          path: .
+      - name: Refresh eligible public markets for this window
+        run: |
+          set -euo pipefail
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Collect four-hour window 5 (read only)
         run: |
           set -euo pipefail
@@ -250,6 +286,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_5 > observation_window_5_health.json
           cat observation_window_5_health.json
+          python venue_coverage_health.py --archive-dir observation_window_5 > observation_window_5_venue_health.json
+          cat observation_window_5_venue_health.json
       - name: Build window 5 profitability replay
         if: always()
         run: |
@@ -262,7 +300,10 @@ jobs:
           path: |
             observation_window_5/*.json
             observation_window_5.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_5_health.json
+            observation_window_5_venue_health.json
             observation_window_5_backtest_summary.json
             observation_window_5_backtest/*.json
           if-no-files-found: warn
@@ -283,11 +324,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore original research mapping
-        uses: actions/download-artifact@v4
-        with:
-          name: observation-mapping
-          path: .
+      - name: Refresh eligible public markets for this window
+        run: |
+          set -euo pipefail
+          python kalshi_sports_capture.py
+          python polymarket_public.py --limit 100 --max-pages 10
+          P="$(find snapshots -maxdepth 1 -name 'polymarket_*.json' -print -quit)"
+          test -n "$P"
+          python market_comparison.py --kalshi kalshi_sports_snapshot.json --polymarket "$P" --max-results 500 --output research_matches.json
+          python opposing_token_map.py --matches research_matches.json --output opposing_token_map.json
       - name: Collect four-hour window 6 (read only)
         run: |
           set -euo pipefail
@@ -299,6 +344,8 @@ jobs:
           set -euo pipefail
           python collector_health.py --archive-dir observation_window_6 > observation_window_6_health.json
           cat observation_window_6_health.json
+          python venue_coverage_health.py --archive-dir observation_window_6 > observation_window_6_venue_health.json
+          cat observation_window_6_venue_health.json
       - name: Build window 6 profitability replay
         if: always()
         run: |
@@ -311,7 +358,10 @@ jobs:
           path: |
             observation_window_6/*.json
             observation_window_6.log
+            research_matches.json
+            opposing_token_map.json
             observation_window_6_health.json
+            observation_window_6_venue_health.json
             observation_window_6_backtest_summary.json
             observation_window_6_backtest/*.json
           if-no-files-found: warn
