@@ -398,6 +398,9 @@ jobs:
         run: |
           set -euo pipefail
           python local_historical_backtest.py --archive-dir observation_all --output-dir observation_final | tee observation_final_summary.json
+      - name: Publish quantity depth and fee sensitivity report
+        run: |
+          python publish_quantity_diagnostics.py --archive observation_final/local_backtest_archive.json --output observation_final/quantity_depth_fee_report.json
       - name: Preserve final analysis
         if: always()
         uses: actions/upload-artifact@v4
