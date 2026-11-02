@@ -24,7 +24,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
         raise ValueError("Archive needs captures list")
     if archive.get("source_type")!="archived_public_orderbook_observations" or archive.get("trade_allowed") is True:
         raise ValueError("Explicit archival provenance required")
-    results=[];rejected=[];seen=set();unique_positive_pairs=set();pricing_totals=Counter()
+    results=[];rejected=[];seen=set();unique_positive_pairs=set();pricing_totals=Counter();best_near_misses={}
     for index,capture in enumerate(archive["captures"]):
         try:
             if not isinstance(capture,dict): raise ValueError("Invalid capture")
@@ -42,6 +42,34 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
                 opposing_tokens=mapping)
             pricing_totals.update(screened.get("pricing_diagnostics",{}))
             scenarios=[]
+            # Preserve the closest nonpositive priced scenarios for future audit.
+            # These are research observations, not executable trade opportunities.
+            near_misses=[]
+            for miss in screened.get("near_misses",[]):
+                scenario=miss.get("scenario",{})
+                try:
+                    net=Decimal(str(scenario["hypothetical_net_usd"]))
+                except (KeyError, ValueError, TypeError, ArithmeticError):
+                    continue
+                if net > 0:
+                    continue
+                entry={"kalshi_ticker":miss.get("kalshi_ticker"),
+                       "kalshi_side":miss.get("kalshi_side"),
+                       "polymarket_token_id":miss.get("polymarket_token_id"),
+                       "modeled_net_usd":str(net),
+                       "modeled_roi_pct":scenario.get("hypothetical_roi_pct"),
+                       "modeled_total_cost_usd":scenario.get("total_cost_usd"),
+                       "contracts_each":scenario.get("contracts_each"),
+                       "minimum_total_cost_reduction_to_positive_usd":scenario.get("minimum_total_cost_reduction_to_positive_usd"),
+                       "quote_within_20_seconds":miss.get("quote_quality",{}).get("within_20_seconds") is True,
+                       "settlement_rules_verified":False,
+                       "execution_verified":False}
+                near_misses.append(entry)
+                pair=(str(entry["kalshi_ticker"]),str(entry["kalshi_side"]),str(entry["polymarket_token_id"]))
+                previous=best_near_misses.get(pair)
+                if previous is None or net > Decimal(previous["modeled_net_usd"]):
+                    best_near_misses[pair]={**entry,"captured_at":key}
+            near_misses.sort(key=lambda e:Decimal(e["modeled_net_usd"]),reverse=True)
             for item in screened["rows"]:
                 s=item["scenario"]
                 p=Decimal(str(s["hypothetical_net_usd"]))
@@ -68,7 +96,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
             results.append({"captured_at":key,"modeled_positive_candidates":len(scenarios),
                             "pairs_with_modeled_prices":screened.get("mapped_pairs_priced",0),
                             "pricing_diagnostics":screened.get("pricing_diagnostics",{}),
-                            "candidates":scenarios[:50]})
+                            "candidates":scenarios[:50], "closest_nonpositive_near_misses":near_misses[:3]})
         except (KeyError,ValueError,TypeError,ArithmeticError) as exc:
             rejected.append({"capture_index":index,"reason":str(exc)[:160]})
     results.sort(key=lambda x:x["captured_at"])
@@ -86,6 +114,7 @@ def replay(archive, *, poly_rate="0.05",kalshi_multiplier="1",extra_cost="0.25",
         "independent_profitable_trades_established":0,
         "total_priced_pair_observations":sum(x["pairs_with_modeled_prices"] for x in results),
         "pricing_diagnostics":dict(sorted(pricing_totals.items())),
+        "closest_nonpositive_near_misses":sorted(best_near_misses.values(),key=lambda e:Decimal(e["modeled_net_usd"]),reverse=True)[:30],
         "eligibility_rule":"modeled_net_usd_strictly_greater_than_zero_no_minimum_roi",
         "max_combined_budget_usd":"5000","max_per_venue_budget_usd":"2500",
         "fx_cost_assumed_zero_if_not_explicit":fx_cost is None,
