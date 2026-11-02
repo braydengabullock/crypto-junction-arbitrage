@@ -401,6 +401,9 @@ jobs:
       - name: Publish quantity depth and fee sensitivity report
         run: |
           python publish_quantity_diagnostics.py --archive observation_final/local_backtest_archive.json --output observation_final/quantity_depth_fee_report.json
+      - name: Publish fee and settlement evidence gaps
+        run: |
+          python publish_fee_rule_evidence.py --archive observation_final/local_backtest_archive.json --output observation_final/fee_rule_evidence_gaps.json
       - name: Preserve final analysis
         if: always()
         uses: actions/upload-artifact@v4
