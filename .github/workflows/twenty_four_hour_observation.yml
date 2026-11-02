@@ -407,6 +407,9 @@ jobs:
       - name: Collect official market evidence (bounded, research only)
         run: |
           python publish_source_evidence.py --archive observation_final/local_backtest_archive.json --output observation_final/official_source_evidence.json --limit 20
+      - name: Triage collected rule and fee evidence
+        run: |
+          python official_source_risk_triage.py --input observation_final/official_source_evidence.json --output observation_final/official_source_risk_triage.json
       - name: Preserve final analysis
         if: always()
         uses: actions/upload-artifact@v4
