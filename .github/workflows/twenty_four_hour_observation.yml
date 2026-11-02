@@ -410,6 +410,9 @@ jobs:
       - name: Triage collected rule and fee evidence
         run: |
           python official_source_risk_triage.py --input observation_final/official_source_evidence.json --output observation_final/official_source_risk_triage.json
+      - name: Reconcile official fee source fields
+        run: |
+          python fee_source_reconciliation.py --input observation_final/official_source_evidence.json --output observation_final/fee_source_reconciliation.json
       - name: Preserve final analysis
         if: always()
         uses: actions/upload-artifact@v4
