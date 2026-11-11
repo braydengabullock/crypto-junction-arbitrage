@@ -1,8 +1,6 @@
 name: Live Kalshi connectivity (read-only)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 20 * * *"
 permissions:
   contents: read
 jobs:
