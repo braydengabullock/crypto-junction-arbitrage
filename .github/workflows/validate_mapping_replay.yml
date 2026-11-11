@@ -1,13 +1,5 @@
 name: Validate mapping and replay saved five-cycle evidence
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/validate_mapping_replay.yml'
-      - 'opposing_token_map.py'
-      - 'depth_fee_screen.py'
-      - 'historical_snapshot_replay.py'
-      - 'tests/test_mapping_collision_regression.py'
   workflow_dispatch:
 permissions:
   contents: read
