@@ -1,8 +1,5 @@
 name: Controlled high-frequency collector trial (read only)
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/controlled_collector_trial.yml']
   workflow_dispatch:
 permissions:
   contents: read
