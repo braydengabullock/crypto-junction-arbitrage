@@ -1,8 +1,5 @@
 name: Historical snapshot replay (read only)
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/historical_backtest.yml']
   workflow_dispatch:
 permissions:
   contents: read
